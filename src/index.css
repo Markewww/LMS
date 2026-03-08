@@ -1,0 +1,39 @@
+@import "tailwindcss";
+
+@theme {
+  /* CvSU Colors */
+  --color-cvsu-green-50: #f0fdf4;
+  --color-cvsu-green-100: #dcfce7;
+  --color-cvsu-green-200: #bbf7d0;
+  --color-cvsu-green-base: #1b651b;
+  --color-cvsu-green-dark: #006400;
+  --color-cvsu-green-900: #052e16;
+  --color-cvsu-white: #ffffff;
+  --color-cvsu-gray: #808080;
+  --color-cvsu-bg: #f4f7f4;
+
+  /* UI Mode */
+  --light: oklch(97.3% 0.071 103.193);
+  --dark: oklch(13% 0.028 261.692);
+
+  /* Fonts */
+  --font-dm: "DM Sans", sans-serif;
+  --font-montserrat: "Montserrat", sans-serif;
+}
+
+:root {
+  background-color: var(--color-cvsu-gray);
+  color: var(--color-cvsu-green-base);
+
+  /* Default Font */
+  font-family: var(--font-dm);
+}
+
+/* CEIT Smooth UI Utilities */
+.ceit-button {
+  @apply font-montserrat font-bold bg-cvsu-green-base text-cvsu-white px-6 py-4 rounded-xl transition-all duration-300 hover:scale-105 active:scale-95 shadow-md;
+}
+
+.ceit-card {
+  @apply bg-cvsu-white rounded-l-4xl border-cvsu-green-base rounded-r-2xl shadow-sm p-6 transition-all hover:shadow-lg;
+}
