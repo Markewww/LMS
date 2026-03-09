@@ -1,5 +1,5 @@
 <?php
-require_once 'dbcofig.php';
+require_once 'dbconfig.php';
 
 $data = json_decode(file_get_contents("php://input"), true);
 $idOrUser = $data['id']; // It can be either ID or username

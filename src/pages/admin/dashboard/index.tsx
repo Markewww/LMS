@@ -3,6 +3,9 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import Sidebar from "@/pages/admin/scenes/sidebar";
 
+// Import Scenes for each tab (for now, we will just show placeholders)
+import AdminManagement from "@/pages/admin/dashboard/scenes/adminManagement";
+
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const [admin, setAdmin] = useState<any>(null);
@@ -73,11 +76,10 @@ const AdminDashboard = () => {
             </div>
           )}
           
-          {activeTab !== "dashboard" && (
-            <div className="flex items-center justify-center h-full text-cvsu-gray italic">
-              Section for {activeTab} is under development...
-            </div>
-          )}
+          {/* Active Tabs */}
+          {activeTab === "admin-management" && admin?.type === "superadmin" && (
+            <AdminManagement />
+            )}
         </div>
       </main>
     </div>
