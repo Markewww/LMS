@@ -1,15 +1,18 @@
 import { useForm } from "react-hook-form";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 import axios from "axios";
+import { EyeIcon, EyeOffIcon } from "lucide-react";
 
 const Login = () => {
   const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
   const { register, handleSubmit, formState: { errors } } = useForm();
 
   const onSubmit = async (data: any) => {
       try {
-        const response = await axios.post("http://localhost/CEIT/src/API/login.php", data);
+        const response = await axios.post("http://localhost/LMS/src/API/login.php", data);
         if (response.data.success) {
             const user = response.data.user;
             // Store user data in the browser's storage (for session management)
@@ -56,14 +59,23 @@ const Login = () => {
             {errors.id && <p className="text-red-500 text-xs mt-1">{String(errors.id.message)}</p>}
           </div>
 
-          <div>
-            <label className="block text-sm font-bold text-cvsu-green-dark mb-2">PASSWORD</label>
-            <input 
-              type="password" 
-              {...register("password", { required: "Password is required" })}
-              className="w-full p-3 bg-cvsu-green-50 border border-cvsu-green-100 rounded-lg outline-none focus:ring-2 focus:ring-cvsu-green-base"
-              placeholder="••••••••"
-            />
+           <div>
+            <label className="block text-sm font-bold text-cvsu-green-dark mb-2 uppercase">Password</label>
+            <div className="relative">
+              <input 
+                type={showPassword ? "text" : "password"}
+                {...register("password", { required: "Password is required" })}
+                className="w-full p-3 bg-cvsu-green-50 border border-cvsu-green-100 rounded-lg outline-none focus:ring-2 focus:ring-cvsu-green-base pr-12"
+                placeholder="••••••••"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-cvsu-gray hover:text-cvsu-green-base transition-colors"
+              >
+                {showPassword ? <EyeOffIcon size={20} /> : <EyeIcon size={20} />}
+              </button>
+            </div>
             {errors.password && <p className="text-red-500 text-xs mt-1">{String(errors.password.message)}</p>}
           </div>
 
