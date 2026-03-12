@@ -5,6 +5,7 @@ import Sidebar from "@/pages/admin/scenes/sidebar";
 
 // Import Scenes for each tab (for now, we will just show placeholders)
 import AdminManagement from "@/pages/admin/dashboard/scenes/adminManagement";
+import StudentManagement from "@/pages/admin/dashboard/scenes/studentManagement";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -80,6 +81,9 @@ const AdminDashboard = () => {
           {activeTab === "admin-management" && admin?.type === "superadmin" && (
             <AdminManagement />
             )}
+          {activeTab === "students" && (admin?.type === "admin" || admin?.type === "superadmin") && (
+            <StudentManagement />
+          )}
         </div>
       </main>
     </div>

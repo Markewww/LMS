@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
+import { SelectedPage } from '@/shared/types';
+
+// Components
 import Navbar from '@/pages/Homepage/scenes/navbar';
 import Home from '@/pages/Homepage/scenes/home';
 import About from '@/pages/Homepage/scenes/about';
 import ContactUs from '@/pages/Homepage/scenes/contactUs';
 import Footer from '@/pages/Homepage/scenes/footer';
-import { SelectedPage } from '@/shared/types';
 
 
 const Homepage = () => {

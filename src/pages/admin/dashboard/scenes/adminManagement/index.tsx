@@ -13,7 +13,7 @@ const AdminManagement = () => {
   // Fetch list of admins from the database
   const fetchAdmins = async () => {
     try {
-      const response = await axios.get("http://localhost/CEIT/src/API/admin/get_admins.php");
+      const response = await axios.get("http://localhost/LMS/src/API/admin/get_admins.php");
       setAdmins(response.data);
     } catch (error) {
       console.error("Error fetching admins:", error);
@@ -24,7 +24,7 @@ const AdminManagement = () => {
 
   const onSubmit = async (data: any) => {
     try {
-      const response = await axios.post("http://localhost/CEIT/src/API/add_admin.php", data);
+      const response = await axios.post("http://localhost/LMS/src/API/admin/add_admin.php", data);
       if (response.data.success) {
         alert("New Admin Added Successfully!");
         fetchAdmins();
