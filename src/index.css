@@ -37,3 +37,26 @@
 .ceit-card {
   @apply bg-cvsu-white rounded-l-4xl border-cvsu-green-base rounded-r-2xl shadow-sm p-6 transition-all hover:shadow-lg;
 }
+
+@media print {
+  body *{
+    visibility: hidden
+  }
+  .app, .app * {
+    visibility: hidden;
+  }
+
+  #id-front, #id-front *, #id-back, #id-back * {
+    visibility: visible;
+  }
+  #id-front {
+    position: absolute;
+    left: 0;
+    top: 0;
+  }
+  #id-back {
+    position: absolute;
+    left: 4in; /* Adjust based on the width of the ID card */
+    top: 0;
+  }
+}
