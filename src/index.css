@@ -40,23 +40,35 @@
 
 @media print {
   body *{
-    visibility: hidden
-  }
-  .app, .app * {
     visibility: hidden;
+    margin: 0;
+    padding: 0;
   }
+  /* .app, .app * {
+    visibility: hidden;
+  } */
 
-  #id-front, #id-front *, #id-back, #id-back * {
+  #id-front, #id-front *, 
+  #id-back, #id-back * {
     visibility: visible;
   }
-  #id-front {
+
+  .print-section {
+    visibility: visible;
     position: absolute;
     left: 0;
     top: 0;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    margin-top: 0.5in; /* Adjust based on the desired spacing from the top of the page */
   }
-  #id-back {
-    position: absolute;
-    left: 4in; /* Adjust based on the width of the ID card */
-    top: 0;
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
+
 }
