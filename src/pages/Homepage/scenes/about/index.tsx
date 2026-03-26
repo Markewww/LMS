@@ -3,7 +3,10 @@ import { motion } from "framer-motion";
 import { 
   QrCodeIcon, 
   BookOpenIcon, 
-  ClockIcon 
+  ClockIcon,
+  FolderOpenIcon,
+  UsersIcon,
+  ArrowTrendingUpIcon
 } from "@heroicons/react/24/outline";
 
 type Props = {
@@ -39,7 +42,7 @@ const About = ({ setSelectedPage }: Props) => {
         </motion.div>
 
         {/* FEATURES / BENEFITS SECTION */}
-        <div className="mt-10 flex flex-col md:flex-row items-center justify-between gap-8">
+        <div className="mt-10 grid grid-cols-1 md:grid-cols-3 gap-8">
           
           {/* Feature 1: Fast Entry */}
           <div className="ceit-card border-l-4 border-cvsu-green-base flex flex-col items-center text-center">
@@ -48,7 +51,7 @@ const About = ({ setSelectedPage }: Props) => {
             </div>
             <h4 className="font-bold font-montserrat text-cvsu-green-dark">Instant Entry</h4>
             <p className="my-3 text-xs text-cvsu-gray">
-              Simply scan your digital Student QR code at the entrance to log your attendance instantly.
+              Quick and easy attendance tracking with QR code scanning.
             </p>
           </div>
 
@@ -71,6 +74,39 @@ const About = ({ setSelectedPage }: Props) => {
             <h4 className="font-bold font-montserrat text-cvsu-green-dark">Time Tracking</h4>
             <p className="my-3 text-xs text-cvsu-gray">
               Keep track of your reading logs and return dates directly through your student dashboard.
+            </p>
+          </div>
+
+          {/* Feature 4: Research Repository */}
+          <div className="ceit-card border-l-4 border-cvsu-green-base flex flex-col items-center text-center">
+            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-cvsu-green-100">
+              <FolderOpenIcon className="h-8 w-8 text-cvsu-green-base" />
+            </div>
+            <h4 className="font-bold font-montserrat text-cvsu-green-dark">Research Repository</h4>
+            <p className="my-3 text-xs text-cvsu-gray">
+              Submit and manage your thesis, capstone, or design projects.
+            </p>
+          </div>
+
+          {/* Feature 5: Users Management */}
+          <div className="ceit-card border-l-4 border-cvsu-green-base flex flex-col items-center text-center">
+            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-cvsu-green-100">
+              <UsersIcon className="h-8 w-8 text-cvsu-green-base" />
+            </div>
+            <h4 className="font-bold font-montserrat text-cvsu-green-dark">Users Management</h4>
+            <p className="my-3 text-xs text-cvsu-gray">
+              Comprehensive user and role management system.
+            </p>
+          </div>
+
+          {/* Feature 6: Performance Tracking */}
+          <div className="ceit-card border-l-4 border-cvsu-green-base flex flex-col items-center text-center">
+            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-cvsu-green-100">
+              <ArrowTrendingUpIcon className="h-8 w-8 text-cvsu-green-base" />
+            </div>
+            <h4 className="font-bold font-montserrat text-cvsu-green-dark">Performance Tracking</h4>
+            <p className="my-3 text-xs text-cvsu-gray">
+              Monitor trends and generate insightful reports on library usage and book popularity.
             </p>
           </div>
           

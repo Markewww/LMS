@@ -11,7 +11,7 @@ const Home = ({ setSelectedPage }: Props) => {
   const isAboveMediumScreens = useMediaQuery("(min-width: 1060px)");
 
   return (
-    <section id="home" className="gap-16 py-10 md:h-full md:pb-0 bg-white">
+    <section id="home" className="gap-16 py-10 h-screen md:h-full md:pb-0 bg-white">
       {/* IMAGE AND MAIN HEADER */}
       <motion.div 
         className="mx-auto w-5/6 items-center justify-center md:flex md:h-5/6"
