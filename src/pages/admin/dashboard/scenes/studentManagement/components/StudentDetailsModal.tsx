@@ -8,6 +8,9 @@ import axios from "axios";
 import StudentIDCard from "./StudentIDCard"; // Import our new component
 import FormField from "./formField"; // Import the form fields component
 
+// API CONFIG FILE
+import { API_BASE_URL } from "@/API/APIConfig";
+
 type Props = {
   selectedStudent: any;
   setSelectedStudent: (value: any) => void;
@@ -71,7 +74,7 @@ const StudentDetailsModal = ({ selectedStudent, setSelectedStudent, onUpdate }: 
 
   const onSaveChanges = async (data: any) => {
     try {
-      const response = await axios.post("http://localhost/LMS/src/API/admin/update_student.php", data);
+      const response = await axios.post(`${API_BASE_URL}/admin/update_student.php`, data);
       if (response.data.success) {
         alert("Student updated successfully!");
         onUpdate();

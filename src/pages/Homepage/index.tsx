@@ -26,7 +26,7 @@ const Homepage = () => {
     }, []);
 
     return (
-        <div className='app bg-white font-dm'>
+        <div className='app bg-white font-dm min-h-screen w-full overflow-x-hidden'>
             <Navbar 
                 isTopOfPage={isTopOfPage} 
                 selectedPage={selectedPage} 

@@ -6,6 +6,8 @@ import Sidebar from "@/pages/admin/scenes/sidebar";
 // Import Scenes for each tab (for now, we will just show placeholders)
 import AdminManagement from "@/pages/admin/dashboard/scenes/adminManagement";
 import StudentManagement from "@/pages/admin/dashboard/scenes/studentManagement";
+import AttendanceLog from "@/pages/admin/dashboard/scenes/activityLogs/attendance";
+import CirculationLog from "@/pages/admin/dashboard/scenes/activityLogs/circulation";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -84,6 +86,15 @@ const AdminDashboard = () => {
           {activeTab === "students" && (admin?.type === "admin" || admin?.type === "superadmin") && (
             <StudentManagement />
           )}
+          {activeTab === "logs" && (admin?.type === "admin" || admin?.type === "superadmin") && (
+            <div className="space-y-12">
+              <AttendanceLog />
+              <hr className="border-gray-100"/>
+              <CirculationLog />
+            </div>
+
+          )}
+
         </div>
       </main>
     </div>

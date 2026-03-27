@@ -5,7 +5,11 @@ import {
   Layers, Bell, ChevronDown, CheckCircle2, Clock, BookMarked
 } from "lucide-react";
 
-const StudentDashboard = () => {
+type Props = {
+  handleLogout: () => void;
+};
+
+const StudentDashboard = ({ handleLogout }: Props) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
 
@@ -41,8 +45,10 @@ const StudentDashboard = () => {
           <NavItem icon={<User size={20}/>} label="My Profile" />
         </nav>
 
-        <button className="flex items-center gap-3 px-4 py-3 text-red-500 hover:bg-red-50 rounded-xl transition-all font-bold text-sm">
-          <LogOut size={20} /> Logout
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-3 px-4 py-3 text-red-500 hover:bg-red-50 rounded-xl transition-all font-bold text-sm">
+          <LogOut size={25} /> Logout
         </button>
       </aside>
 
