@@ -1,4 +1,10 @@
+import { useState } from "react";
+
+// Icons
 import { UsersIcon, CheckCircleIcon, EyeIcon } from "lucide-react";
+
+// Components 
+import ConfirmationModal from "./alerts/ConfirmationModal";
 
 type Props = {
   students: any[];
@@ -7,8 +13,31 @@ type Props = {
 };
 
 const StudentTable = ({ students, onUpdateStatus, onViewDetails }: Props) => {
+  const [confirmData, setConfirmData] = useState<{ id: string; isOpen: boolean }>({
+    id: "",
+    isOpen: false,
+  });
+
+  const handleOpenConfirm = (id: string) => {
+    setConfirmData({ id, isOpen: true });
+  }
+
+  const handleConfirmAction = () => {
+    onUpdateStatus(confirmData.id, 'active');
+    setConfirmData({ id: "", isOpen: false });
+  }
+
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      {/* ALERT MODAL */}
+      <ConfirmationModal
+        isOpen={confirmData.isOpen}
+        onClose={() => setConfirmData({ id: "", isOpen: false })}
+        onConfirm={handleConfirmAction}
+        title="Approve Student"
+        message="Are you sure you want to approve this student's account?"
+      />
+
       <div className="p-6 border-b border-gray-50 flex items-center gap-2">
         <UsersIcon className="text-cvsu-green-base" size={24} />
         <h3 className="font-montserrat font-black text-cvsu-green-dark uppercase">Student Masterlist</h3>
@@ -37,10 +66,22 @@ const StudentTable = ({ students, onUpdateStatus, onViewDetails }: Props) => {
                 </span>
               </td>
               <td className="p-4 flex items-center justify-center gap-4">
-                {student.account_status === 'pending' && (
-                  <button onClick={() => onUpdateStatus(student.student_id, 'active')} className="text-green-600 hover:scale-110 p-1"><CheckCircleIcon size={22} /></button>
+                {student.account_status === 'pending' ? (
+                  <button 
+                  onClick={() => handleOpenConfirm(student.student_id)} 
+                  className="text-green-600 hover:scale-110 p-1"
+                  >
+                    <CheckCircleIcon size={22} />
+                    </button>
+                ) : (
+                  // Eye icon visible only for active students
+                    <button 
+                    onClick={() => onViewDetails(student)} 
+                    className="text-cvsu-green-base hover:scale-110 p-1"
+                    >
+                      <EyeIcon size={20} />
+                    </button>
                 )}
-                <button onClick={() => onViewDetails(student)} className="text-cvsu-green-base hover:scale-110 p-1"><EyeIcon size={20} /></button>
               </td>
             </tr>
           ))}

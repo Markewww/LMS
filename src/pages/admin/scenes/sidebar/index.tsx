@@ -3,7 +3,6 @@ import {
   UsersIcon, 
   BookOpenIcon, 
   ClipboardListIcon, 
-  QrCodeIcon,
   UserPlusIcon, // New Icon for Admin Management
   LogOutIcon 
 } from "lucide-react";
@@ -21,8 +20,7 @@ const Sidebar = ({ activeTab, setActiveTab, handleLogout, userType }: Props) => 
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboardIcon },
     { id: "students", label: "Student Management", icon: UsersIcon },
     { id: "books", label: "Book Inventory", icon: BookOpenIcon },
-    { id: "logs", label: "Transaction Logs", icon: ClipboardListIcon },
-    { id: "qr-generation", label: "QR Generator", icon: QrCodeIcon },
+    { id: "logs", label: "Activity Logs", icon: ClipboardListIcon },
   ];
 
   // Dynamically add the Admin Account Management tab ONLY if superadmin

@@ -30,8 +30,8 @@ const AddStudentForm = ({ onSubmit }: Props) => {
     reset();
   };
 
-  const labelStyle = "text-[10px] font-bold text-cvsu-gray uppercase";
-  const inputStyle = "w-full p-3 bg-gray-50 rounded-lg border focus:ring-2 focus:ring-cvsu-green-base outline-none transition-all";
+  const labelStyle = "block text-[10px] font-black text-gray-400 uppercase mb-1 ml-1";
+  const inputStyle = "w-full p-3 bg-cvsu-green-50 border border-cvsu-green-100 rounded-xl outline-none focus:ring-2 focus:ring-cvsu-green-base transition-all text-sm";
   const errorStyle = "text-red-500 text-[10px] mt-1 font-bold";
 
   return (
@@ -78,7 +78,7 @@ const AddStudentForm = ({ onSubmit }: Props) => {
           <input 
             {...register("first_name", { 
               required: "Required",
-              pattern: { value: /^[A-Za-z\s]+$/, message: "Letters only" }
+              pattern: { value: /^[A-Za-zñÑ\s]+$/, message: "Letters only" }
             })} 
             className={inputStyle} 
           />
@@ -90,7 +90,7 @@ const AddStudentForm = ({ onSubmit }: Props) => {
           <input 
             {...register("last_name", { 
               required: "Required",
-              pattern: { value: /^[A-Za-z\s]+$/, message: "Letters only" }
+              pattern: { value: /^[A-Za-zñÑ\s]+$/, message: "Letters only" }
             })} 
             className={inputStyle} 
           />
@@ -101,7 +101,7 @@ const AddStudentForm = ({ onSubmit }: Props) => {
           <label className={labelStyle}>Middle Name</label>
           <input 
             {...register("middle_name", { 
-              pattern: { value: /^[A-Za-z\s]+$/, message: "Letters only" }
+              pattern: { value: /^[A-Za-zñÑ\s]+$/, message: "Letters only" }
             })} 
             className={inputStyle} 
           />
@@ -111,10 +111,12 @@ const AddStudentForm = ({ onSubmit }: Props) => {
         {/* PROGRAM FIELD */}
         <div>
           <label className={labelStyle}>Program (Course)</label>
-          <select {...register("course", { required: true })} className={inputStyle}>
+          <select 
+            {...register("course", { required: true })} 
+            className={inputStyle}>
             <option value="">Select Program</option>
             <option value="BSABE">Bachelor of Science in Agricultural and Biosystems Engineering</option>
-            <option value="BS ARCHI">Bachelor of Science in Architecture</option>
+            <option value="BSARCHI">Bachelor of Science in Architecture</option>
             <option value="BSCE">Bachelor of Science in Civil Engineering</option>
             <option value="BSCpE">Bachelor of Science in Computer Engineering</option>
             <option value="BSCS">Bachelor of Science in Computer Science</option>

@@ -1,10 +1,14 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { motion } from "framer-motion";
 
 // Components
 import AdminDetailsModal from "./components/AdminDetailsModal";
 import AdminTable from "./components/AdminTable";
 import AddAdminForm from "./components/AddAdminForm";
+
+// API CONFIG FILE
+import { API_BASE_URL } from "@/API/APIConfig";
 
 const AdminManagement = () => {
   const [admins, setAdmins] = useState([]);
@@ -13,7 +17,7 @@ const AdminManagement = () => {
   // Fetch list of admins from the database
   const fetchAdmins = async () => {
     try {
-      const response = await axios.get("http://localhost/LMS/src/API/admin/get_admins.php");
+      const response = await axios.get(`${API_BASE_URL}/admin/get_admins.php`);
       setAdmins(response.data);
     } catch (error) {
       console.error("Error fetching admins:", error);
@@ -24,7 +28,7 @@ const AdminManagement = () => {
 
   const onSubmit = async (data: any) => {
     try {
-      const response = await axios.post("http://localhost/LMS/src/API/admin/add_admin.php", data);
+      const response = await axios.post(`${API_BASE_URL}/admin/add_admin.php`, data);
       if (response.data.success) {
         alert("New Admin Added Successfully!");
         fetchAdmins();
@@ -37,14 +41,17 @@ const AdminManagement = () => {
   };
 
   return (
-    <div className="space-y-10 font-dm relative">
+    <motion.div 
+      initial={{ opacity: 0, x: 20 }} 
+      animate={{ opacity: 1, x: 0 }} 
+      className="space-y-10 font-dm relative">
       {/* VIEW ADMIN DETAILS MODAL */}
         <AdminDetailsModal selectedAdmin={selectedAdmin} setSelectedAdmin={setSelectedAdmin} />
       {/* ADMIN TABLE */}
         <AdminTable admins={admins} setSelectedAdmin={setSelectedAdmin} />
       {/* ADD ADMIN FORM */}
         <AddAdminForm onSubmit={onSubmit} />
-    </div>
+    </motion.div>
   );
 };
 

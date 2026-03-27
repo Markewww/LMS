@@ -3,6 +3,7 @@ import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/solid";
 import { SelectedPage } from "@/shared/types";
 import useMediaQuery from "@/hooks/useMediaQuery";
 import { useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 
 type Props = {
   isTopOfPage: boolean;
@@ -68,29 +69,51 @@ const Navbar = ({ isTopOfPage, selectedPage, setSelectedPage }: Props) => {
       </div>
 
       {/* MOBILE MENU MODAL */}
-      {!isAboveMediumScreens && isMenuToggled && (
-        <div className="fixed right-0 bottom-0 z-50 h-full w-1/2 bg-white drop-shadow-xl border-l border-cvsu-green-100">
-          {/* CLOSE ICON */}
-          <div className="flex justify-end p-12">
-            <button onClick={() => setIsMenuToggled(!isMenuToggled)}>
-              <XMarkIcon className="h-8 w-8 text-cvsu-green-base" />
-            </button>
-          </div>
+      <AnimatePresence>
+        {!isAboveMediumScreens && isMenuToggled && (
+          <motion.div
+            // Animation settings: Top to bottom
+            initial={{ y: "-100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "-100%" }}
+            transition={{ duration: 0.5, ease: "easeInOut" }}
+            // Changed w-1/2 to w-full to cover the whole page
+            className="fixed inset-0 z-50 h-full w-full bg-white flex flex-col"
+          >
+            {/* CLOSE ICON SECTION */}
+            <div className="flex justify-end p-8 pt-10">
+              <button 
+                className="bg-cvsu-green-50 p-2 rounded-full"
+                onClick={() => setIsMenuToggled(false)}
+              >
+                <XMarkIcon className="h-10 w-10 text-cvsu-green-base" />
+              </button>
+            </div>
 
-          {/* MENU ITEMS */}
-          <div className="ml-[20%] flex flex-col gap-10 text-2xl">
-            <a href="#home" onClick={() => { setSelectedPage(SelectedPage.Home); setIsMenuToggled(false); }} className={navLinkStyles}>Home</a>
-            <a href="#about" onClick={() => { setSelectedPage(SelectedPage.About); setIsMenuToggled(false); }} className={navLinkStyles}>About</a>
-            <a href="#contactus" onClick={() => { setSelectedPage(SelectedPage.ContactUs); setIsMenuToggled(false); }} className={navLinkStyles}>Contact Us</a>
-            <button 
-                onClick={() => navigate("/login")}
-                className="bg-cvsu-green-base text-white font-montserrat font-bold py-3 rounded-lg mr-10 uppercase text-lg"
-            >
-                Login
-            </button>
-          </div>
-        </div>
-      )}
+            {/* FULL SCREEN MENU ITEMS */}
+            <div className="flex flex-col items-center justify-center gap-12 text-3xl h-full pb-20">
+              <a href="#home" 
+                 onClick={() => { setSelectedPage(SelectedPage.Home); setIsMenuToggled(false); }} 
+                 className={`${navLinkStyles} hover:scale-110 transition-transform`}>Home</a>
+              
+              <a href="#about" 
+                 onClick={() => { setSelectedPage(SelectedPage.About); setIsMenuToggled(false); }} 
+                 className={`${navLinkStyles} hover:scale-110 transition-transform`}>About</a>
+              
+              <a href="#contactus" 
+                 onClick={() => { setSelectedPage(SelectedPage.ContactUs); setIsMenuToggled(false); }} 
+                 className={`${navLinkStyles} hover:scale-110 transition-transform`}>Contact Us</a>
+              
+              <button 
+                  onClick={() => navigate("/login")}
+                  className="bg-cvsu-green-base text-white font-montserrat font-black px-12 py-4 rounded-2xl shadow-xl shadow-cvsu-green-base/20 uppercase text-xl mt-4"
+              >
+                  Login
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </nav>
   );
 };
