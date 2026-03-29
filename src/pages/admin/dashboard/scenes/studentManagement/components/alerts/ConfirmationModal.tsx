@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { AlertCircle, CheckCircle } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 
-type Props = {
+ type Props = {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;

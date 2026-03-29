@@ -1,17 +1,47 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   BookOpen, Search, LayoutDashboard, User, LogOut, 
   Layers, Bell, ChevronDown, CheckCircle2, Clock, BookMarked
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
-type Props = {
-  handleLogout: () => void;
-};
+// API CONFIG FILE
+import { API_BASE_URL } from "@/API/APIConfig";
 
-const StudentDashboard = ({ handleLogout }: Props) => {
+const StudentDashboard = () => {
+  const navigate = useNavigate();
+  const [student, setStudent] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
+
+  useEffect(() => {
+    const loggedInUser = localStorage.getItem("user");
+    if (!loggedInUser) {
+      navigate("/login");
+    } else {
+      const parsedUser = JSON.parse(loggedInUser);
+      if (parsedUser.type !== "student") {
+        navigate("/login");
+      } else {
+        setStudent(parsedUser);
+      }
+    }
+  }, [navigate]);
+
+  const handleLogout = async () => {
+    try {
+      await axios.post(`${API_BASE_URL}/logout.php`);
+      localStorage.removeItem("user");
+      navigate("/login", { replace: true });
+    } catch (error) {
+      localStorage.removeItem("user");
+      navigate("/login");
+    }
+  };
+
+  if (!student) return null;
 
   // Mock Data for UI/UX
   const stats = [
@@ -63,6 +93,7 @@ const StudentDashboard = ({ handleLogout }: Props) => {
               type="text" 
               placeholder="Search books, authors, ISBN..." 
               className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-cvsu-green-base/20 outline-none transition-all"
+              value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
