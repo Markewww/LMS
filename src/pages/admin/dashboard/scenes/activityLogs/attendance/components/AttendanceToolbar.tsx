@@ -1,4 +1,9 @@
-import { Search, Calendar, ArrowUpDown, X } from "lucide-react";
+import { 
+  Search, 
+  Calendar, 
+  ArrowUpDown, 
+  X, 
+  ExternalLink } from "lucide-react";
 import { useRef } from "react";
 
 type Props = {
@@ -18,8 +23,26 @@ const AttendanceToolbar = ({
   sortOrder,
   setSortOrder
 }: Props) => {
-  // Create a ref to the hidden date input
   const dateInputRef = useRef<HTMLInputElement>(null);
+
+  // Function to open a new dedicated page for the QR code scanner
+  const openAttendanceKiosk = () => {
+    const url = "/admin/dashboard/attendance-kiosk";
+    const windowName = "AttendanceKioskWindow";
+
+    const width = window.screen.availWidth;
+    const height = window.screen.availHeight;
+
+    const windowFeatures = `width=${width},height=${height},top=0,left=0,popup=yes,menubar=no,toolbar=no,location=no,status=no,resizable=yes`;
+
+    const newWindow = window.open(url, windowName, windowFeatures);
+    if (!newWindow || newWindow.closed || typeof newWindow.closed === "undefined") {
+      // Handle case where window failed to open
+      alert("Popup blocked! Please allow popups for this site to open the Kiosk.");
+    } else {
+      newWindow.focus();
+    }
+  };
 
   const resetToToday = () => {
     const today = new Date().toLocaleDateString('en-CA'); // 'en-CA' gives YYYY-MM-DD reliably
@@ -71,6 +94,14 @@ const AttendanceToolbar = ({
       </div>
 
       <div className="flex items-center gap-2">
+        <button
+          onClick={openAttendanceKiosk}
+          className="flex items-center gap-2 px-4 py-2 bg-cvsu-green-50 text-cvsu-green-base rounded-xl text-xs font-bold hover:bg-cvsu-green-100 transition-all border border-cvsu-green-100"
+          title="Open Kiosk View"
+        >
+          <ExternalLink size={14} />
+          Kiosk Mode
+        </button>
         <button
           onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
           className="flex items-center gap-2 px-4 py-2 bg-gray-50 text-gray-600 rounded-xl text-xs font-bold hover:bg-gray-100 transition-all"
