@@ -9,6 +9,7 @@ import StudentManagement from "@/pages/admin/dashboard/scenes/studentManagement"
 import AttendanceLog from "@/pages/admin/dashboard/scenes/activityLogs/attendance";
 import CirculationLog from "@/pages/admin/dashboard/scenes/activityLogs/circulation";
 import BookInventory from "@/pages/admin/dashboard/scenes/bookInventory";
+import ResearchApproval from "@/pages/admin/dashboard/scenes/researchApproval";
 
 // API CONFIG FILE
 import { API_BASE_URL } from "@/API/APIConfig";
@@ -92,6 +93,9 @@ const AdminDashboard = () => {
           )}
           {activeTab === "books" && (admin?.type === "admin" || admin?.type === "superadmin") && (
             <BookInventory />
+          )}
+          {activeTab === "research" && (admin?.type === "admin" || admin?.type === "superadmin") && (
+            <ResearchApproval />
           )}
           {activeTab === "logs" && (admin?.type === "admin" || admin?.type === "superadmin") && (
             <div className="space-y-12">

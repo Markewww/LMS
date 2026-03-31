@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
+import { motion } from "framer-motion";
 import { Search, Book as BookIcon, CheckCircle, XCircle } from "lucide-react";
 import { API_BASE_URL } from "@/API/APIConfig";
 
@@ -23,7 +24,10 @@ const StudentBookCatalog = () => {
   );
 
   return (
-    <div className="space-y-6">
+    <motion.div 
+      initial={{ opacity: 0, x: 20 }} 
+      animate={{ opacity: 1, x: 0 }} 
+      className="space-y-6">
       <div className="relative group max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-cvsu-green-base transition-colors" size={18} />
         <input 
@@ -61,7 +65,7 @@ const StudentBookCatalog = () => {
           </div>
         ))}
       </div>
-    </div>
+    </motion.div>
   );
 };
 
