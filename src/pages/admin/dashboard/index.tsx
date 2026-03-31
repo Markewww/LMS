@@ -8,6 +8,10 @@ import AdminManagement from "@/pages/admin/dashboard/scenes/adminManagement";
 import StudentManagement from "@/pages/admin/dashboard/scenes/studentManagement";
 import AttendanceLog from "@/pages/admin/dashboard/scenes/activityLogs/attendance";
 import CirculationLog from "@/pages/admin/dashboard/scenes/activityLogs/circulation";
+import BookInventory from "@/pages/admin/dashboard/scenes/bookInventory";
+
+// API CONFIG FILE
+import { API_BASE_URL } from "@/API/APIConfig";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -30,7 +34,7 @@ const AdminDashboard = () => {
 
   const handleLogout = async () => {
     try {
-      await axios.post("http://localhost/CEIT/src/API/logout.php");
+      await axios.post(`${API_BASE_URL}/logout.php`);
       localStorage.removeItem("user");
       navigate("/login", { replace: true });
     } catch (error) {
@@ -85,6 +89,9 @@ const AdminDashboard = () => {
             )}
           {activeTab === "students" && (admin?.type === "admin" || admin?.type === "superadmin") && (
             <StudentManagement />
+          )}
+          {activeTab === "books" && (admin?.type === "admin" || admin?.type === "superadmin") && (
+            <BookInventory />
           )}
           {activeTab === "logs" && (admin?.type === "admin" || admin?.type === "superadmin") && (
             <div className="space-y-12">
