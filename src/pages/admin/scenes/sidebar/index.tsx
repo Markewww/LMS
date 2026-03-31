@@ -3,6 +3,7 @@ import {
   UsersIcon, 
   BookOpenIcon, 
   ClipboardListIcon, 
+  ClipboardCheck,
   UserPlusIcon, // New Icon for Admin Management
   LogOutIcon 
 } from "lucide-react";
@@ -20,6 +21,7 @@ const Sidebar = ({ activeTab, setActiveTab, handleLogout, userType }: Props) => 
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboardIcon },
     { id: "students", label: "Student Management", icon: UsersIcon },
     { id: "books", label: "Book Inventory", icon: BookOpenIcon },
+    { id: "research", label: "Research Submissions", icon: ClipboardCheck },
     { id: "logs", label: "Activity Logs", icon: ClipboardListIcon },
   ];
 

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { motion } from "framer-motion";
 import { 
   LayoutDashboard, 
   Search, 
@@ -11,10 +12,12 @@ import {
   ChevronRight
 } from "lucide-react";
 
+
 import Sidebar from "@/pages/student/scenes/sidebar";
 import StudentBookCatalog from "./scenes/bookCatalog";
 import MyBorrowingHistory from "./scenes/borrowingHistory";
 import StudentProfile from "./scenes/profile";
+import ResearchPostModal from "./components/ResearchPostModal";
 import { API_BASE_URL } from "@/API/APIConfig";
 
 const StudentDashboard = () => {
@@ -22,17 +25,33 @@ const StudentDashboard = () => {
   const [student, setStudent] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("dashboard");
   const [isAboveMediumScreens, setIsAboveMediumScreens] = useState(window.innerWidth > 768);
+  const [isPostModalOpen, setIsPostModalOpen] = useState(false);
+
+  const fetchFullProfile = async (studentId: string) => {
+    try {
+      const response = await axios.get(
+        `${API_BASE_URL}/student/get_profile.php?student_id=${studentId}`
+      );
+      setStudent(response.data);
+    } catch (error) {
+      console.error("Error syncing profile:", error);
+    }
+  };
 
   useEffect(() => {
     const handleResize = () => setIsAboveMediumScreens(window.innerWidth > 768);
     window.addEventListener("resize", handleResize);
     
     const loggedInUser = localStorage.getItem("user");
-    if (!loggedInUser) navigate("/login");
-    else {
+    if (!loggedInUser) {
+      navigate("/login");
+    } else {
       const parsedUser = JSON.parse(loggedInUser);
-      if (parsedUser.type !== "student") navigate("/login");
-      else setStudent(parsedUser);
+      if (parsedUser.type !== "student") {
+        navigate("/login");
+      } else {
+        fetchFullProfile(parsedUser.id);
+      }
     }
     return () => window.removeEventListener("resize", handleResize);
   }, [navigate]);
@@ -51,7 +70,13 @@ const StudentDashboard = () => {
   if (!student) return null;
 
   return (
-    <div className="flex min-h-screen bg-cvsu-bg font-dm">
+    <div 
+      className="flex min-h-screen bg-cvsu-bg font-dm">
+      <ResearchPostModal 
+        isOpen={isPostModalOpen} 
+        onClose={() => setIsPostModalOpen(false)} 
+        student={student}
+      />
       {/* DESKTOP SIDEBAR */}
       {isAboveMediumScreens && (
         <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} handleLogout={handleLogout} />
@@ -79,17 +104,22 @@ const StudentDashboard = () => {
         )}
 
         <div className="p-4 md:p-8 flex-1">
+          <motion.div 
+            key={activeTab}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}>
           {activeTab === "dashboard" && (
-            <div className="space-y-6">
-               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-white p-6 rounded-2xl shadow-sm border-t-4 border-cvsu-green-base">
-                  <p className="text-[10px] font-bold text-cvsu-gray uppercase">Borrowed</p>
-                  <p className="text-3xl font-black text-gray-800">2</p>
+            <div className="space-y-6 animate-in fade-in duration-500">
+               <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center gap-3">
+                <div className="w-10 h-10 bg-cvsu-green-base rounded-full flex items-center justify-center text-white font-bold shrink-0">
+                  {student?.first_name?.charAt(0)}
                 </div>
-                <div className="bg-white p-6 rounded-2xl shadow-sm border-t-4 border-red-500">
-                  <p className="text-[10px] font-bold text-cvsu-gray uppercase">Overdue</p>
-                  <p className="text-3xl font-black text-red-500">1</p>
-                </div>
+                <button 
+                  onClick={() => setIsPostModalOpen(true)}
+                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-500 text-left px-4 py-2.5 rounded-full text-sm transition-colors"
+                >
+                  Submit a new project...
+                </button>
               </div>
             </div>
           )}
@@ -122,6 +152,7 @@ const StudentDashboard = () => {
               )}
             </div>
           )}
+          </motion.div>
         </div>
       </main>
     </div>

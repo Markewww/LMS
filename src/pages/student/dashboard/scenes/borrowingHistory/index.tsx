@@ -1,4 +1,5 @@
-import { Clock, BookOpen, AlertCircle } from "lucide-react";
+import { BookOpen, } from "lucide-react";
+import { motion } from "framer-motion";
 
 const MyBorrowingHistory = () => {
   // Static mockup - in production, fetch based on student_id
@@ -8,7 +9,11 @@ const MyBorrowingHistory = () => {
   ];
 
   return (
-    <div className="bg-white rounded-xl overflow-hidden border border-gray-100">
+    <motion.div 
+      initial={{ opacity: 0, x: 20 }} 
+      animate={{ opacity: 1, x: 0 }} 
+      className="bg-white rounded-xl overflow-hidden border border-gray-100"
+    >
       <table className="w-full text-left">
         <thead className="bg-gray-50 text-cvsu-gray text-xs font-bold uppercase tracking-wider">
           <tr>
@@ -38,7 +43,7 @@ const MyBorrowingHistory = () => {
           ))}
         </tbody>
       </table>
-    </div>
+    </motion.div>
   );
 };
 
