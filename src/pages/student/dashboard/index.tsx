@@ -1,33 +1,40 @@
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { 
-  BookOpen, Search, LayoutDashboard, User, LogOut, 
-  Layers, Bell, ChevronDown, CheckCircle2, Clock, BookMarked
-} from "lucide-react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { 
+  LayoutDashboard, 
+  Search, 
+  History, 
+  UserCircle, 
+  LogOut,
+  Bell,
+  ChevronRight
+} from "lucide-react";
 
-// API CONFIG FILE
+import Sidebar from "@/pages/student/scenes/sidebar";
+import StudentBookCatalog from "./scenes/bookCatalog";
+import MyBorrowingHistory from "./scenes/borrowingHistory";
+import StudentProfile from "./scenes/profile";
 import { API_BASE_URL } from "@/API/APIConfig";
 
 const StudentDashboard = () => {
   const navigate = useNavigate();
   const [student, setStudent] = useState<any>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [activeTab, setActiveTab] = useState("dashboard");
+  const [isAboveMediumScreens, setIsAboveMediumScreens] = useState(window.innerWidth > 768);
 
   useEffect(() => {
+    const handleResize = () => setIsAboveMediumScreens(window.innerWidth > 768);
+    window.addEventListener("resize", handleResize);
+    
     const loggedInUser = localStorage.getItem("user");
-    if (!loggedInUser) {
-      navigate("/login");
-    } else {
+    if (!loggedInUser) navigate("/login");
+    else {
       const parsedUser = JSON.parse(loggedInUser);
-      if (parsedUser.type !== "student") {
-        navigate("/login");
-      } else {
-        setStudent(parsedUser);
-      }
+      if (parsedUser.type !== "student") navigate("/login");
+      else setStudent(parsedUser);
     }
+    return () => window.removeEventListener("resize", handleResize);
   }, [navigate]);
 
   const handleLogout = async () => {
@@ -43,168 +50,94 @@ const StudentDashboard = () => {
 
   if (!student) return null;
 
-  // Mock Data for UI/UX
-  const stats = [
-    { label: "Total Books", value: "1,240", icon: <BookOpen className="text-blue-500" />, bg: "bg-blue-50" },
-    { label: "Available", value: "856", icon: <CheckCircle2 className="text-cvsu-green-base" />, bg: "bg-green-50" },
-    { label: "Borrowed", value: "12", icon: <Clock className="text-orange-500" />, bg: "bg-orange-50" },
-  ];
-
-  const books = [
-    { id: 1, title: "Modern Architecture", author: "Frank Wright", category: "Architecture", status: "Available", image: "https://images.unsplash.com" },
-    { id: 2, title: "Data Structures & Algorithms", author: "Narasimha Karumanchi", category: "Computer Science", status: "Borrowed", image: "https://images.unsplash.com" },
-    { id: 3, title: "Circuit Analysis", author: "William Hayt", category: "Engineering", status: "Available", image: "https://images.unsplash.com" },
-    // Add more mock books as needed
-  ];
-
   return (
-    <div className="flex min-h-screen bg-gray-50 font-dm">
-      {/* 1. SIDEBAR (Fixed/Collapsible Desktop) */}
-      <aside className="hidden lg:flex flex-col w-64 bg-white border-r border-gray-100 p-6 space-y-8">
-        <div className="flex items-center gap-3 px-2">
-          <div className="bg-cvsu-green-base p-2 rounded-xl text-white">
-            <BookMarked size={24} />
-          </div>
-          <span className="font-montserrat font-black text-cvsu-green-dark tracking-tighter">CEIT READ</span>
-        </div>
+    <div className="flex min-h-screen bg-cvsu-bg font-dm">
+      {/* DESKTOP SIDEBAR */}
+      {isAboveMediumScreens && (
+        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} handleLogout={handleLogout} />
+      )}
 
-        <nav className="flex-1 space-y-2">
-          <NavItem icon={<LayoutDashboard size={20}/>} label="Dashboard" active />
-          <NavItem icon={<BookOpen size={20}/>} label="Browse Books" />
-          <NavItem icon={<Layers size={20}/>} label="Categories" />
-          <NavItem icon={<User size={20}/>} label="My Profile" />
-        </nav>
-
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-3 px-4 py-3 text-red-500 hover:bg-red-50 rounded-xl transition-all font-bold text-sm">
-          <LogOut size={25} /> Logout
-        </button>
-      </aside>
-
-      {/* MAIN CONTENT AREA */}
-      <main className="flex-1 flex flex-col min-w-0">
+      <main className={`flex-1 flex flex-col ${isAboveMediumScreens ? "ml-64" : "ml-0"}`}>
         
-        {/* 2. TOP NAVBAR */}
-        <header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-8 sticky top-0 z-20">
-          <div className="relative w-full max-w-md hidden md:block">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-            <input 
-              type="text" 
-              placeholder="Search books, authors, ISBN..." 
-              className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-cvsu-green-base/20 outline-none transition-all"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-
-          <div className="flex items-center gap-6">
-            <button className="relative p-2 text-gray-400 hover:bg-gray-50 rounded-full transition-all">
-              <Bell size={22} />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
-            </button>
-            <div className="flex items-center gap-3 border-l pl-6 border-gray-100">
-              <div className="text-right hidden sm:block">
-                <p className="text-xs font-black text-gray-800 leading-none">Student Name</p>
-                <p className="text-[10px] text-gray-400 uppercase font-bold mt-1">2021-00000</p>
-              </div>
-              <div className="w-10 h-10 bg-cvsu-green-100 rounded-full flex items-center justify-center text-cvsu-green-dark font-bold">
-                S
+        {/* MOBILE HEADER & TABS (Facebook Style) */}
+        {!isAboveMediumScreens && (
+          <div className="sticky top-0 z-50 bg-white border-b border-gray-100">
+            <div className="flex items-center justify-between px-4 pt-4 pb-2">
+              <h1 className="text-xl font-black text-cvsu-green-base uppercase tracking-tighter">CEIT Library</h1>
+              <div className="flex gap-2">
+                <button className="p-2 bg-gray-100 rounded-full text-gray-600"><Bell size={20} /></button>
               </div>
             </div>
+            
+            <div className="flex w-full">
+              <MobileTab icon={<LayoutDashboard size={24}/>} id="dashboard" active={activeTab} onClick={setActiveTab} />
+              <MobileTab icon={<Search size={24}/>} id="catalog" active={activeTab} onClick={setActiveTab} />
+              <MobileTab icon={<History size={24}/>} id="history" active={activeTab} onClick={setActiveTab} />
+              <MobileTab icon={<UserCircle size={24}/>} id="profile" active={activeTab} onClick={setActiveTab} />
+            </div>
           </div>
-        </header>
+        )}
 
-        {/* 3. SCROLLABLE CONTENT */}
-        <div className="p-8 space-y-8 overflow-y-auto h-[calc(100vh-80px)]">
-          
-          {/* A. WELCOME SECTION */}
-          <section>
-            <h2 className="text-2xl font-black text-gray-800 tracking-tight">Welcome back, Student! 👋</h2>
-            <p className="text-gray-500 text-sm mt-1">Find your next favorite engineering resource today.</p>
-          </section>
-
-          {/* B. STATS CARDS */}
-          <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {stats.map((stat, i) => (
-              <motion.div 
-                key={i} 
-                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
-                className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow"
-              >
-                <div className={`${stat.bg} p-4 rounded-2xl`}>{stat.icon}</div>
-                <div>
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">{stat.label}</p>
-                  <p className="text-xl font-black text-gray-800">{stat.value}</p>
+        <div className="p-4 md:p-8 flex-1">
+          {activeTab === "dashboard" && (
+            <div className="space-y-6">
+               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-white p-6 rounded-2xl shadow-sm border-t-4 border-cvsu-green-base">
+                  <p className="text-[10px] font-bold text-cvsu-gray uppercase">Borrowed</p>
+                  <p className="text-3xl font-black text-gray-800">2</p>
                 </div>
-              </motion.div>
-            ))}
-          </section>
-
-          {/* C. FILTERS */}
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex gap-2">
-              {["All", "Architecture", "Computer Science", "Engineering"].map((cat) => (
-                <button 
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${
-                    selectedCategory === cat 
-                    ? "bg-cvsu-green-base text-white shadow-lg shadow-cvsu-green-base/20" 
-                    : "bg-white text-gray-500 hover:bg-gray-100"
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
+                <div className="bg-white p-6 rounded-2xl shadow-sm border-t-4 border-red-500">
+                  <p className="text-[10px] font-bold text-cvsu-gray uppercase">Overdue</p>
+                  <p className="text-3xl font-black text-red-500">1</p>
+                </div>
+              </div>
             </div>
-            <button className="flex items-center gap-2 text-xs font-bold text-gray-500 bg-white px-4 py-2 rounded-xl border border-gray-100 hover:bg-gray-50">
-              Sort by: Newest <ChevronDown size={14} />
-            </button>
-          </div>
+          )}
 
-          {/* D. BOOK CATALOG GRID */}
-          <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-10">
-            <AnimatePresence>
-              {books.map((book) => (
-                <motion.div 
-                  layout key={book.id}
-                  initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-                  className="bg-white rounded-2xl border border-gray-100 overflow-hidden group hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
-                >
-                  <div className="h-48 overflow-hidden relative">
-                    <img src={book.image} alt={book.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                    <span className={`absolute top-4 right-4 px-3 py-1 rounded-full text-[10px] font-black uppercase ${
-                      book.status === 'Available' ? 'bg-green-500 text-white' : 'bg-orange-500 text-white'
-                    }`}>
-                      {book.status}
-                    </span>
-                  </div>
-                  <div className="p-5 space-y-1">
-                    <p className="text-[10px] font-bold text-cvsu-green-base uppercase">{book.category}</p>
-                    <h4 className="font-bold text-gray-800 line-clamp-1">{book.title}</h4>
-                    <p className="text-xs text-gray-400 pb-4 italic">by {book.author}</p>
-                    <button className="w-full py-2.5 bg-gray-50 text-cvsu-green-dark font-black text-[10px] uppercase tracking-widest rounded-xl group-hover:bg-cvsu-green-base group-hover:text-white transition-all">
-                      View Details
-                    </button>
-                  </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </section>
-
+          {activeTab === "catalog" && <StudentBookCatalog />}
+          {activeTab === "history" && <MyBorrowingHistory />}
+          
+          {/* PROFILE TAB WITH LOGOUT AT THE BOTTOM */}
+          {activeTab === "profile" && (
+            <div className="space-y-6">
+              <StudentProfile studentData={student} />
+              
+              {/* MOBILE ONLY LOGOUT BUTTON (FB Menu Style) */}
+              {!isAboveMediumScreens && (
+                <div className="mt-8 space-y-2">
+                  <p className="px-2 text-xs font-bold text-cvsu-gray uppercase tracking-widest">Account Actions</p>
+                  <button 
+                    onClick={handleLogout}
+                    className="w-full flex items-center justify-between p-4 bg-white border border-gray-100 rounded-2xl text-red-500 shadow-sm active:bg-gray-50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-red-50 rounded-lg">
+                        <LogOut size={20} />
+                      </div>
+                      <span className="font-bold">Log Out</span>
+                    </div>
+                    <ChevronRight size={18} className="text-gray-300" />
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </main>
     </div>
   );
 };
 
-// Sub-component for Sidebar Navigation
-const NavItem = ({ icon, label, active = false }: { icon: any, label: string, active?: boolean }) => (
-  <button className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-xl font-bold text-sm transition-all ${
-    active ? "bg-cvsu-green-base text-white shadow-lg shadow-cvsu-green-base/20" : "text-gray-400 hover:bg-gray-50 hover:text-gray-600"
-  }`}>
-    {icon} {label}
+const MobileTab = ({ icon, id, active, onClick }: any) => (
+  <button 
+    onClick={() => onClick(id)}
+    className={`flex-1 flex flex-col items-center py-3 border-b-3 transition-all ${
+      active === id 
+      ? "border-cvsu-green-base text-cvsu-green-base" 
+      : "border-transparent text-gray-400"
+    }`}
+  >
+    {icon}
   </button>
 );
 
