@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { Clock, FileText, Globe, MoreHorizontal, Download, User, Tag, ChevronDown, ChevronUp } from "lucide-react";
-import { API_BASE_URL } from "@/API/APIConfig";
 import ResearchPostModal from "@/pages/student/dashboard/components/ResearchPostModal";
+
+// Config Files
+import { PDF_BASE_URL } from "@/API/PDFConfig";
+import { API_BASE_URL } from "@/API/APIConfig";
 
 const Timeline = ({ student }: { student: any }) => {
   const [posts, setPosts] = useState<any[]>([]);
@@ -70,7 +73,7 @@ const Timeline = ({ student }: { student: any }) => {
                       <p className="text-xs font-black text-cvsu-green-base uppercase tracking-tighter">{post.type}</p>
                       {isMentioned && (
                         <span className="text-[9px] bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded font-bold uppercase border border-amber-100">
-                          Mentioned
+                          Mentioned you in a post
                         </span>
                       )}
                     </div>
@@ -158,7 +161,7 @@ const Timeline = ({ student }: { student: any }) => {
                   </span>
                 </div>
                 <a 
-                  href={`http://localhost/LMS/src/${post.file_path}`} 
+                  href={`${PDF_BASE_URL}${post.file_path}`} 
                   target="_blank" 
                   rel="noreferrer"
                   className="flex items-center gap-1.5 text-cvsu-green-base text-[10px] font-black uppercase hover:underline"

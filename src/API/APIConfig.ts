@@ -1,1 +1,1 @@
-export const API_BASE_URL = "http://192.168.5.179/LMS/src/API";
+export const API_BASE_URL = "http://192.168.1.82/LMS/src/API";
