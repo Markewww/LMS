@@ -27,8 +27,12 @@ const Navbar = ({ isTopOfPage, selectedPage, setSelectedPage }: Props) => {
           <div className={`${flexBetween} w-full gap-16`}>
             
             {/* BRAND/LOGO SPACE */}
-            <div className="font-montserrat font-black text-cvsu-green-base text-xl uppercase tracking-tighter">
-                CEIT LMS
+            <div className="flex items-center gap-3">
+                <img 
+                  src="/src/images/cvsu-logo.png" 
+                  alt="CvSU Logo" 
+                  className="h-10 w-10 object-contain sm:h-12 sm:w-12"
+                />
             </div>
 
             {/* DESKTOP NAV */}

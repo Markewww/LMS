@@ -61,14 +61,14 @@ const AttendanceToolbar = ({
     <div className="flex flex-wrap items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-gray-100 shadow-sm mb-6">
       <div className="flex flex-wrap items-center gap-4 flex-1">
         {/* Search Input */}
-        <div className="relative w-full md:max-w-xs">
+        <div className="relative w-full md:w-96">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
           <input
             type="text"
             placeholder="Search Name or ID..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-cvsu-green-base/20 outline-none transition-all"
+            className="w-full pl-10 pr-4 py-2 bg-gray-50 border rounded-lg text-sm focus:ring-2 focus:ring-cvsu-green-base outline-none transition-all"
           />
         </div>
 

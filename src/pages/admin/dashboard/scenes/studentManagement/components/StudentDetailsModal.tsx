@@ -94,7 +94,7 @@ const StudentDetailsModal = ({ selectedStudent, setSelectedStudent, onUpdate }: 
       >
         <div className="bg-cvsu-green-base p-4 flex justify-between items-center text-white print:hidden">
           <h3 className="font-montserrat font-bold uppercase tracking-widest text-sm">Manage Student Profile</h3>
-          <button onClick={() => setSelectedStudent(null)}><XIcon size={24}/></button>
+          <button onClick={() => setSelectedStudent(null)} className="hover:rotate-90 transition-transform"><XIcon size={24}/></button>
         </div>
 
         <div className="p-6 md:p-8 space-y-8 print:p-0 overflow-y-auto max-h-[85vh]">

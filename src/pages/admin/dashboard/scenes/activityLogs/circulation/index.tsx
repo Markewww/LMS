@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { motion } from "framer-motion";
-import { BookOpenIcon, CalendarIcon, UserIcon, CheckCircle2Icon } from "lucide-react";
+import { BookOpenIcon } from "lucide-react";
 
 const CirculationLog = () => {
   const [logs, setLogs] = useState<any[]>([]);
@@ -29,7 +29,7 @@ const CirculationLog = () => {
       className="space-y-6"
     >
       <div className="flex items-center gap-3">
-        <div className="bg-cvsu-green-base p-2 rounded-lg text-white">
+        <div className="bg-white p-2 rounded-lg text-cvsu-green-base">
           <BookOpenIcon size={24} />
         </div>
         <div>

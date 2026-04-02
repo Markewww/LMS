@@ -73,9 +73,21 @@ const Home = ({ setSelectedPage }: Props) => {
         {isAboveMediumScreens && (
           <div className="flex basis-3/5 justify-center md:z-10 md:ml-40 md:mt-16 md:justify-items-end">
             {/* You can put a library illustration or QR mockup image here later */}
-            <div className="w-100 h-100 bg-cvsu-green-100 rounded-full flex items-center justify-center">
-                <span className="text-cvsu-green-base font-black text-6xl">LMS</span>
-            </div>
+            <motion.div 
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="w-96 h-96 bg-cvsu-green-50 rounded-full flex items-center justify-center relative border-8 border-white shadow-2xl"
+            >
+              {/* BACKGROUND DECORATION */}
+              <div className="absolute inset-0 bg-cvsu-green-base/5 rounded-full"></div>
+
+              {/* THE LOGO */}
+              <img 
+                src="/src/images/cvsu-logo.png" 
+                alt="CvSU Logo" 
+                className="w-64 h-64 object-contain relative z-10 drop-shadow-xl"
+              />
+            </motion.div>
           </div>
         )}
       </motion.div>

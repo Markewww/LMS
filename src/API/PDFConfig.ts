@@ -1,1 +1,1 @@
-export const PDF_BASE_URL = "http://192.168.1.82/LMS/src/";
+export const PDF_BASE_URL = "http://192.168.1.2/LMS/src/";

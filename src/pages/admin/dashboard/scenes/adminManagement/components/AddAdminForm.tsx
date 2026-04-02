@@ -13,8 +13,8 @@ const AddAdminForm = ({ onSubmit }: Props) => {
     reset();
   }
 
-  const labelStyle = "text-[10px] font-bold text-cvsu-gray uppercase";
-  const inputStyle = "w-full p-3 bg-gray-50 rounded-lg border focus:ring-2 focus:ring-cvsu-green-base outline-none transition-all";
+  const labelStyle = "block text-[10px] font-black text-gray-400 uppercase mb-1 ml-1";
+  const inputStyle = "w-full p-3 bg-cvsu-green-50 border border-cvsu-green-100 rounded-xl outline-none focus:ring-2 focus:ring-cvsu-green-base transition-all text-sm";
   const errorStyle = "text-red-500 text-[10px] mt-1 font-bold";
 
   return (

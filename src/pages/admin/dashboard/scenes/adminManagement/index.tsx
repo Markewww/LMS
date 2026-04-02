@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import AdminDetailsModal from "./components/AdminDetailsModal";
 import AdminTable from "./components/AdminTable";
 import AddAdminForm from "./components/AddAdminForm";
+import AdminToolbar from "./components/AdminToolbar";
 
 // API CONFIG FILE
 import { API_BASE_URL } from "@/API/APIConfig";
@@ -13,6 +14,8 @@ import { API_BASE_URL } from "@/API/APIConfig";
 const AdminManagement = () => {
   const [admins, setAdmins] = useState([]);
   const [selectedAdmin, setSelectedAdmin] = useState<any>(null); // State for Modal
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all");
 
   // Fetch list of admins from the database
   const fetchAdmins = async () => {
@@ -25,6 +28,21 @@ const AdminManagement = () => {
   };
 
   useEffect(() => { fetchAdmins(); }, []);
+
+  // --- START OF FILTERING LOGIC ---
+  const filteredAdmins = admins.filter((a: any) => {
+    const term = searchTerm.toLowerCase();
+    
+    const matchesSearch = 
+      a.user_id.toString().toLowerCase().includes(term) || 
+      a.last_name.toLowerCase().includes(term) ||
+      a.first_name.toLowerCase().includes(term) ||
+      a.email.toLowerCase().includes(term);
+
+    const matchesStatus = filterStatus === "all" || a.account_status === filterStatus;
+    
+    return matchesSearch && matchesStatus;
+  });
 
   const onSubmit = async (data: any) => {
     try {
@@ -45,11 +63,9 @@ const AdminManagement = () => {
       initial={{ opacity: 0, x: 20 }} 
       animate={{ opacity: 1, x: 0 }} 
       className="space-y-10 font-dm relative">
-      {/* VIEW ADMIN DETAILS MODAL */}
-        <AdminDetailsModal selectedAdmin={selectedAdmin} setSelectedAdmin={setSelectedAdmin} />
-      {/* ADMIN TABLE */}
-        <AdminTable admins={admins} setSelectedAdmin={setSelectedAdmin} />
-      {/* ADD ADMIN FORM */}
+        <AdminToolbar searchTerm={searchTerm} setSearchTerm={setSearchTerm} filterStatus={filterStatus} setFilterStatus={setFilterStatus} />
+        <AdminDetailsModal selectedAdmin={selectedAdmin} setSelectedAdmin={setSelectedAdmin} onUpdate={fetchAdmins}/>
+        <AdminTable admins={filteredAdmins} setSelectedAdmin={setSelectedAdmin} />
         <AddAdminForm onSubmit={onSubmit} />
     </motion.div>
   );
