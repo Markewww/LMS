@@ -1,74 +1,197 @@
-import React, { useState } from 'react';
-import { Plus, X } from 'lucide-react';
+import { useState, useEffect, type KeyboardEvent } from "react"; // Added 'type' for KeyboardEvent
+import { useForm } from "react-hook-form";
+import axios from "axios";
+import { BookPlusIcon, XIcon, Loader2Icon } from "lucide-react";
 
-interface AddBookFormProps {
+// API CONFIG FILE
+import { API_BASE_URL } from "@/API/APIConfig";
+
+type Props = {
   onSubmit: (data: any) => void;
-}
+};
 
-const AddBookForm: React.FC<AddBookFormProps> = ({ onSubmit }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [formData, setFormData] = useState({
-    title: '', author: '', isbn: '', category: 'Fiction', stock: 0
-  });
+const AddBookForm = ({ onSubmit }: Props) => {
+  const { register, handleSubmit, reset, formState: { errors } } = useForm();
+  
+  const [authors, setAuthors] = useState<string[]>([]);
+  const [inputValue, setInputValue] = useState("");
+  const [nextId, setNextId] = useState<string>(""); // Starting ID for new books
+  const [loadingId, setLoadingId] = useState(true); // Track which ID is loading
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit(formData);
-    setFormData({ title: '', author: '', isbn: '', category: 'Fiction', stock: 0 });
-    setIsOpen(false);
+  // Fetch the next available book ID on component mount
+  const fetchNextId = async () => {
+    try {
+      setLoadingId(true);
+      const response = await axios.get(`${API_BASE_URL}/admin/get_next_accession.php`);
+      setNextId(response.data.next_id);
+    } catch (error) {
+      console.error("Error fetching next ID:", error);
+      setNextId("ERR-0001"); // Fallback ID if API fails
+    } finally {
+      setLoadingId(false);
+    }
   };
 
-  if (!isOpen) return (
-    <button 
-      onClick={() => setIsOpen(true)}
-      className="fixed bottom-8 right-8 flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-full shadow-lg transition-all hover:scale-105"
-    >
-      <Plus className="h-5 w-5" />
-      <span className="font-semibold">Add New Book</span>
-    </button>
-  );
+  useEffect(() => { fetchNextId(); }, []);
+
+  const formatString = (str: string) => {
+    if (!str) return "";
+    return str
+      .toLowerCase()
+      .split(" ")
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+  };
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const value = inputValue.trim();
+      if (value && !authors.includes(value)) {
+        setAuthors([...authors, formatString(value)]);
+        setInputValue("");
+      }
+    }
+  };
+
+  const removeAuthor = (index: number) => {
+    setAuthors(authors.filter((_, i) => i !== index));
+  };
+
+  const handleInternalSubmit = async (data: any) => {
+    const accessionNo = nextId;
+
+    const formData = {
+      uuid: accessionNo,
+      title: data.title.toUpperCase(),
+      authors: authors.length > 0 ? authors.join(", ") : formatString(data.author),
+      publisher: formatString(data.publisher),
+      copyright_year: data.year_published,
+      isbn: data.isbn,
+      category: data.type,
+      stock: parseInt(data.stock),
+      qr_data: `CEIT-RR-BOOK-${accessionNo}`, 
+      barcode: `BR-${accessionNo}` 
+    };
+    
+    await onSubmit(formData);
+    reset();
+    setAuthors([]);
+    fetchNextId(); // Refresh the next available ID after submission
+  };
+
+  const labelStyle = "block text-[10px] font-black text-gray-400 uppercase mb-1 ml-1";
+  const inputStyle = "w-full p-3 bg-cvsu-green-50 border border-cvsu-green-100 rounded-xl outline-none focus:ring-2 focus:ring-cvsu-green-base transition-all text-sm";
+  const errorStyle = "text-red-500 text-[10px] mt-1 font-bold";
+  const disabledStyle = "w-full p-3 bg-gray-100 border border-gray-200 rounded-xl text-sm font-bold text-cvsu-green-dark cursor-not-allowed";
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 mt-8">
-      <div className="flex justify-between items-center mb-6">
-        <h3 className="text-lg font-bold text-gray-800">Enter Book Information</h3>
-        <button onClick={() => setIsOpen(false)} className="text-gray-400 hover:text-gray-600">
-          <X className="h-5 w-5" />
-        </button>
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 mt-10 font-dm">
+      <div className="flex items-center gap-2 mb-6">
+        <BookPlusIcon className="text-cvsu-green-base" size={24} />
+        <h3 className="font-montserrat font-black text-cvsu-green-dark uppercase tracking-widest">
+          New Inventory Registration
+        </h3>
       </div>
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <input 
-          required placeholder="Book Title"
-          className="p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm"
-          onChange={(e) => setFormData({...formData, title: e.target.value})}
-        />
-        <input 
-          required placeholder="Author Name"
-          className="p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm"
-          onChange={(e) => setFormData({...formData, author: e.target.value})}
-        />
-        <input 
-          required placeholder="ISBN"
-          className="p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm font-mono"
-          onChange={(e) => setFormData({...formData, isbn: e.target.value})}
-        />
-        <select 
-          className="p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm"
-          onChange={(e) => setFormData({...formData, category: e.target.value})}
-        >
-          <option>Fiction</option>
-          <option>Science</option>
-          <option>History</option>
-          <option>Technology</option>
-        </select>
-        <input 
-          type="number" required placeholder="Initial Stock"
-          className="p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm"
-          onChange={(e) => setFormData({...formData, stock: parseInt(e.target.value)})}
-        />
-        <button type="submit" className="bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors">
-          Save to Inventory
-        </button>
+
+      <form onSubmit={handleSubmit(handleInternalSubmit)} className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        
+        {/* UUID */}
+        <div className="md:col-span-1">
+          <label className={labelStyle}>Accession No.</label>
+          <div className="relative">
+            <input 
+              disabled
+              value={loadingId ? "Loading..." : nextId}
+              className={disabledStyle} 
+            />
+            {loadingId && <Loader2Icon className="absolute right-3 top-3 animate-spin text-cvsu-green-base" size={16} />}
+          </div>
+          <p className="text-[9px] text-cvsu-green-base mt-1 font-bold italic">Generated by system</p>
+        </div>
+
+        {/* TITLE */}
+        <div className="md:col-span-3">
+          <label className={labelStyle}>Resource Title</label>
+          <input 
+            {...register("title", { required: "Title is required" })} 
+            className={inputStyle} 
+            placeholder="ENTER COMPLETE TITLE" 
+          />
+          {errors.title && <p className={errorStyle}>{errors.title.message as string}</p>}
+        </div>
+
+        {/* AUTHOR CHIP INPUT */}
+        <div className="md:col-span-4">
+          <label className={labelStyle}>Author(s) - Press Enter to Add</label>
+          <div className={`${inputStyle} flex flex-wrap gap-2 items-center min-h-12.5`}>
+            {authors.map((author, index) => (
+              <span key={index} className="flex items-center gap-1 bg-cvsu-green-base text-white px-3 py-1 rounded-full text-xs font-bold animate-in zoom-in-50 duration-200">
+                {author}
+                <button type="button" onClick={() => removeAuthor(index)} className="hover:text-red-200 transition-colors">
+                  <XIcon size={14} />
+                </button>
+              </span>
+            ))}
+            <input 
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={authors.length === 0 ? "Type author name and press Enter..." : ""}
+              className="flex-1 bg-transparent outline-none min-w-50"
+            />
+          </div>
+          {authors.length === 0 && <p className={errorStyle}>At least one author is required</p>}
+        </div>
+
+        {/* PUBLISHER */}
+        <div className="md:col-span-2">
+          <label className={labelStyle}>Publisher</label>
+          <input {...register("publisher", { required: "Required" })} className={inputStyle} />
+          {errors.publisher && <p className={errorStyle}>{errors.publisher.message as string}</p>}
+        </div>
+
+        {/* ISBN */}
+        <div className="md:col-span-2">
+          <label className={labelStyle}>ISBN / ISSN</label>
+          <input {...register("isbn")} className={`${inputStyle} font-mono`} />
+        </div>
+
+        {/* RESOURCE TYPE */}
+        <div>
+          <label className={labelStyle}>Resource Type</label>
+          <select {...register("type", { required: true })} className={inputStyle}>
+            <option value="book">Book</option>
+            <option value="magazine">Magazine</option>
+            <option value="journal">Journal</option>
+          </select>
+        </div>
+
+        <div>
+          <label className={labelStyle}>Category</label>
+          <select {...register("category", { required: true })} className={inputStyle}>
+            <option value="General">General</option>
+            <option value="Science">Science & Tech</option>
+            <option value="Fiction">Fiction</option>
+            <option value="History">History</option>
+          </select>
+        </div>
+
+        <div>
+          <label className={labelStyle}>Initial Stock</label>
+          <input type="number" {...register("stock", { required: true })} className={inputStyle} defaultValue={1} />
+        </div>
+
+        <div>
+          <label className={labelStyle}>Copyright Year</label>
+          <input type="number" {...register("year_published", { required: true })} className={inputStyle} placeholder="YYYY" />
+        </div>
+
+        <div className="md:col-span-4 pt-4">
+          <button type="submit" className="ceit-button w-full">
+            SAVE RESOURCE TO INVENTORY
+          </button>
+        </div>
       </form>
     </div>
   );

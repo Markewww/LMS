@@ -157,7 +157,7 @@ const Timeline = ({ student }: { student: any }) => {
                     {post.status}
                   </span>
                   <span className="text-[10px] text-gray-400 flex items-center gap-1 font-medium italic">
-                    <Globe size={10}/> CEIT Repository
+                    <Globe size={10}/>{post.status === 'approved' ? "CEIT Repository" : post.verification_code}
                   </span>
                 </div>
                 <a 

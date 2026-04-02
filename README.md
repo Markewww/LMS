@@ -77,11 +77,11 @@ The system adheres to the official CvSU visual identity:
 
 
 ## 📂 Project Structure
-* src/
-* ├── API/              # PHP Backend & Database Config
-* ├── images/           # Assets & Logos
-* └── pages/
-*    ├── admin/        # Student Management, ID Generation
-*    └── student/      # Dashboard, Book Catalog, Profile
+src/
+├── API/              # PHP Backend & Database Config
+├── images/           # Assets & Logos
+└── pages/
+   ├── admin/        # Student Management, ID Generation
+   └── student/      # Dashboard, Book Catalog, Profile
 
 # Developed for the CEIT Reading Room | Cavite State University

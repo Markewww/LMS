@@ -18,6 +18,7 @@ try {
     $critic = $_POST['technicalCritic'];
     $submitted_by = $_POST['submitted_by'];
     $program = $_POST['program']; // New field for student's program/course
+    $v_code = $_POST['verification_code']; // New field for verification code
     $uuid = bin2hex(random_bytes(16)); // Generate a unique ID
 
     // 3. Handle PDF Upload
@@ -41,12 +42,12 @@ try {
     if (move_uploaded_file($file['tmp_name'], $target_path)) {
         // 4. Insert into Database
         $sql = "INSERT INTO research_projects 
-                (uuid, title, abstract, authors, keywords, type, adviser, technical_critic, file_path, submitted_by, program, status) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')";
+                (uuid, verification_code, title, abstract, authors, keywords, type, adviser, technical_critic, file_path, submitted_by, program, status) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')";
         
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("sssssssssss", 
-            $uuid, $title, $abstract, $authors, $keywords, $type, $adviser, $critic, $db_path, $submitted_by, $program
+        $stmt->bind_param("ssssssssssss", 
+            $uuid, $v_code, $title, $abstract, $authors, $keywords, $type, $adviser, $critic, $db_path, $submitted_by, $program
         );
 
         if ($stmt->execute()) {

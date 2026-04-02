@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { motion } from "framer-motion";
+import { MonitorXIcon, LogOutIcon } from "lucide-react";
 import Sidebar from "@/pages/admin/scenes/sidebar";
 
 // Import Scenes for each tab (for now, we will just show placeholders)
@@ -18,8 +20,12 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const [admin, setAdmin] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
 
   useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 1024);
+    window.addEventListener("resize", handleResize);
+
     const loggedInUser = localStorage.getItem("user");
     if (!loggedInUser) {
       navigate("/login");
@@ -31,6 +37,8 @@ const AdminDashboard = () => {
         setAdmin(parsedUser);
       }
     }
+
+    return () => window.removeEventListener("resize", handleResize);
   }, [navigate]);
 
   const handleLogout = async () => {
@@ -45,6 +53,36 @@ const AdminDashboard = () => {
   };
 
   if (!admin) return null;
+
+  // --- MOBILE RESTRICTION VIEW ---
+  if (isMobile) {
+    return (
+      <div className="h-screen w-full flex flex-col items-center justify-center bg-white p-10 text-center font-dm">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="max-w-xs"
+        >
+          <div className="bg-red-50 p-6 rounded-full inline-block mb-6">
+            <MonitorXIcon size={48} className="text-red-500" />
+          </div>
+          <h2 className="text-2xl font-montserrat font-black text-cvsu-green-dark uppercase leading-tight">
+            Mobile Access Restricted
+          </h2>
+          <p className="text-cvsu-gray text-sm mt-4 leading-relaxed">
+            The Admin Dashboard is not applicable for mobile screens. Please use a **Desktop** or **Laptop** to manage the system.
+          </p>
+          
+          <button 
+            onClick={handleLogout}
+            className="mt-10 w-full flex items-center justify-center gap-2 bg-cvsu-green-base text-white py-4 rounded-2xl font-bold uppercase tracking-widest text-xs hover:bg-cvsu-green-dark transition-all"
+          >
+            <LogOutIcon size={18} /> Return to Login
+          </button>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen bg-cvsu-bg font-dm">

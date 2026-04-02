@@ -71,7 +71,7 @@ const AttendanceLog = () => {
       className="space-y-6"
     >
       <div className="flex items-center gap-3">
-        <div className="bg-cvsu-green-base p-2 rounded-lg text-white">
+        <div className="bg-white p-2 rounded-lg text-cvsu-green-base">
           <ClockIcon size={24} />
         </div>
         <div>

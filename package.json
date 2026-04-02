@@ -20,6 +20,7 @@
     "qrcode.react": "^4.2.0",
     "react": "^19.2.0",
     "react-anchor-link-smooth-scroll": "^1.0.12",
+    "react-barcode": "^1.6.1",
     "react-dom": "^19.2.0",
     "react-hook-form": "^7.71.2",
     "react-qrcode-logo": "^4.0.0",

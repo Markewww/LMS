@@ -1,13 +1,15 @@
 import React from 'react';
-import { Eye, Trash2, Edit3, Book as BookIcon } from 'lucide-react';
+import { EyeIcon, Trash2Icon, BookIcon } from 'lucide-react';
 
 interface BookTableProps {
   books: any[];
   onDelete: (id: string) => void;
   onViewDetails: (book: any) => void;
+  onEdit: (book: any) => void; // Added for completeness
 }
 
-const BookTable: React.FC<BookTableProps> = ({ books, onDelete, onViewDetails }) => {
+const BookTable: React.FC<BookTableProps> = ({ books, onDelete, onViewDetails, }) => {
+  
   const getStockStatus = (stock: number) => {
     if (stock <= 0) return { label: "Out of Stock", classes: "bg-red-100 text-red-700" };
     if (stock <= 5) return { label: "Low Stock", classes: "bg-orange-100 text-orange-700" };
@@ -15,64 +17,73 @@ const BookTable: React.FC<BookTableProps> = ({ books, onDelete, onViewDetails })
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden font-dm">
+      {/* HEADER - Matches StudentTable Design */}
+      <div className="p-6 border-b border-gray-50 flex items-center gap-2">
+        <BookIcon className="text-cvsu-green-base" size={24} />
+        <h3 className="font-montserrat font-black text-cvsu-green-dark uppercase tracking-wider">
+          Book Inventory
+        </h3>
+      </div>
+
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
-          <thead className="bg-gray-50 text-gray-600 uppercase text-xs font-semibold">
-            <tr>
-              <th className="px-6 py-4">Book Details</th>
-              <th className="px-6 py-4">Category</th>
-              <th className="px-6 py-4">ISBN</th>
-              <th className="px-6 py-4">Stock</th>
-              <th className="px-6 py-4">Status</th>
-              <th className="px-6 py-4 text-center">Actions</th>
+          <thead>
+            {/* TH STYLING - Matches StudentTable */}
+            <tr className="bg-cvsu-green-50 text-cvsu-green-dark text-[10px] uppercase font-bold tracking-wider">
+              <th className="p-4">Accession No.</th>
+              <th className="p-4">Book Details</th>
+              <th className="p-4">Type/Category</th>
+              <th className="p-4 text-center">Stock Status</th>
+              <th className="p-4 text-center">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-gray-50 text-sm">
             {books.map((book) => {
               const status = getStockStatus(book.stock);
               return (
-                <tr key={book.book_id} className="hover:bg-gray-50/50 transition-colors group">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-blue-50 rounded-lg">
-                        <BookIcon className="h-5 w-5 text-blue-600" />
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-900">{book.title}</p>
-                        <p className="text-sm text-gray-500">{book.author}</p>
-                      </div>
+                <tr key={book.book_id} className="hover:bg-gray-50 transition-colors">
+                  {/* Book ID / Accession Number */}
+                  <td className="p-4 font-bold text-gray-700">{book.book_id}</td>
+                  
+                  {/* Title & Author */}
+                  <td className="p-4">
+                    <div className="flex flex-col">
+                      <span className="font-bold text-gray-800 line-clamp-1">{book.title}</span>
+                      <span className="text-xs text-cvsu-gray italic">{book.author}</span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{book.category}</td>
-                  <td className="px-6 py-4 text-sm font-mono text-gray-500">{book.isbn}</td>
-                  <td className="px-6 py-4 text-sm text-gray-900">{book.stock}</td>
-                  <td className="px-6 py-4">
-                    <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${status.classes}`}>
+
+                  {/* Category */}
+                  <td className="p-4 text-gray-600">
+                    <span className="capitalize">{book.type || "Book"}</span> 
+                    <span className="text-gray-300 mx-2">|</span>
+                    <span className="text-xs">{book.category}</span>
+                  </td>
+
+                  {/* Stock Status Badge */}
+                  <td className="p-4 text-center">
+                    <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${status.classes}`}>
                       {status.label}
                     </span>
                   </td>
-                  <td className="px-6 py-4">
-                    <div className="flex justify-center items-center gap-2">
+
+                  {/* Actions - Matches StudentTable Scale Effect */}
+                  <td className="p-4">
+                    <div className="flex items-center justify-center gap-4">
                       <button 
                         onClick={() => onViewDetails(book)}
-                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                        className="text-cvsu-green-base hover:scale-110 p-1 transition-transform"
                         title="View Details"
                       >
-                        <Eye className="h-4 w-4" />
-                      </button>
-                      <button 
-                        className="p-2 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all"
-                        title="Edit Book"
-                      >
-                        <Edit3 className="h-4 w-4" />
+                        <EyeIcon size={18} />
                       </button>
                       <button 
                         onClick={() => onDelete(book.book_id)}
-                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                        className="text-red-500 hover:scale-110 p-1 transition-transform"
                         title="Delete Book"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2Icon size={18} />
                       </button>
                     </div>
                   </td>
@@ -82,6 +93,13 @@ const BookTable: React.FC<BookTableProps> = ({ books, onDelete, onViewDetails })
           </tbody>
         </table>
       </div>
+
+      {/* EMPTY STATE - Matches StudentTable style */}
+      {books.length === 0 && (
+        <div className="p-20 text-center text-cvsu-gray italic">
+          No book records found.
+        </div>
+      )}
     </div>
   );
 };

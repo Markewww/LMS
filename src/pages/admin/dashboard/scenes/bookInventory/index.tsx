@@ -15,39 +15,50 @@ const BookInventory = () => {
   const [books, setBooks] = useState<any>([]);
   const [selectedBook, setSelectedBook] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterCategory, setFilterCategory] = useState("all");
+  const [filters, setFilters] = useState({ type: 'all', genre: 'all', year: 'all', status: 'all' });
 
   const fetchBooks = async () => {
     try {
-      // Added timestamp to prevent browser caching of old inventory data
-      const response = await axios.get(`${API_BASE_URL}/admin/get_books.php?t=${Date.now()}`);
-      if (Array.isArray(response.data)) {
-        setBooks(response.data);
-      }
+      const response = await axios.get(`${API_BASE_URL}/admin/get_books.php`);
+      // Assuming you have a useState for books
+      setBooks(response.data); 
     } catch (error) {
-      console.error("Error fetching books:", error);
+      console.error("Error fetching inventory:", error);
     }
   };
 
   useEffect(() => { fetchBooks(); }, []);
 
-  // Filter & Search Logic adapted for Book Inventory
-  const filteredBooks = books.filter((b: any) => {
+  const filteredBooks = books.filter((book: any) => {
     const term = searchTerm.toLowerCase();
-    
-    // Checks Title, Author, ISBN, and Category
-    const matchesSearch = 
-      b.title.toLowerCase().includes(term) || 
-      b.author.toLowerCase().includes(term) ||
-      b.isbn.toLowerCase().includes(term) ||
-      b.category.toLowerCase().includes(term);
+    const matchesSearch =
+      (book.book_id?.toString() || "").toLowerCase().includes(term) ||
+      (book.title || "").toLowerCase().includes(term) ||
+      (book.author || "").toLowerCase().includes(term) ||
+      (book.isbn || "").toLowerCase().includes(term);
+    const matchesType = 
+      filters.type === "all" || 
+      book.type?.toLowerCase() === filters.type.toLowerCase();
+    const matchesGenre = 
+      filters.genre === "all" || 
+      book.category?.toLowerCase() === filters.genre.toLowerCase();
+    const bookYear = parseInt(book.copyright_year);
 
-    // Checks Category filter dropdown
-    const matchesCategory = filterCategory === "all" || b.category === filterCategory;
-    
-    return matchesSearch && matchesCategory;
+    let matchesYear = true;
+    if (filters.year !== "all") {
+      if (filters.year === "2024") matchesYear = bookYear === 2024;
+      else if (filters.year === "2023") matchesYear = bookYear === 2023;
+      else if (filters.year === "2020-2022") matchesYear = bookYear >= 2020 && bookYear <= 2022;
+      else if (filters.year === "old") matchesYear = bookYear < 2020;
+    }
+
+    const matchesStatus = 
+      filters.status === "all" || 
+      (filters.status === "available" && book.stock > 0) ||
+      (filters.status === "borrowed" && book.stock <= 0);
+
+    return matchesSearch && matchesType && matchesGenre && matchesYear && matchesStatus;
   });
-
   const handleDeleteBook = async (bookId: string) => {
     if (!window.confirm("Are you sure you want to delete this book?")) return;
     
@@ -68,6 +79,21 @@ const BookInventory = () => {
     }
   };
 
+  const handleAddBook = async (formData: any) => {
+    try {
+      const response = await axios.post(`${API_BASE_URL}/admin/add_book.php`, formData);
+      if (response.data.success) {
+        alert("Book added to inventory successfully!");
+        fetchBooks();
+      } else {
+        alert("Error: " + response.data.message);
+      }
+    } catch (error) {
+      console.error("Submission error:", error);
+      alert("Failed to connect to the server.");
+    }
+  }
+
   return (
     <motion.div 
       initial={{ opacity: 0, x: 20 }} 
@@ -85,8 +111,8 @@ const BookInventory = () => {
       <BookToolbar 
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
-        filterCategory={filterCategory}
-        setFilterCategory={setFilterCategory}
+        filters={filters}
+        setFilters={setFilters}
       />
 
       {/* TABLE */}
@@ -94,21 +120,13 @@ const BookInventory = () => {
         books={filteredBooks}
         onDelete={handleDeleteBook} 
         onViewDetails={(b) => setSelectedBook(b)}
+        onEdit={(b) => {
+          setSelectedBook(b);
+        }}
       />
 
       {/* ADD BOOK FORM */}
-      <AddBookForm onSubmit={async (data) => {
-        try {
-          const response = await axios.post(`${API_BASE_URL}/admin/add_book.php`, data);
-          if (response.data.success) {
-            alert("Book added to inventory successfully!");
-            fetchBooks();
-          }
-        } catch (error) {
-          console.error("Error adding book:", error);
-          alert("Failed to add book.");
-        }
-      }} />
+      <AddBookForm onSubmit={handleAddBook} />
     </motion.div>
   );
 };

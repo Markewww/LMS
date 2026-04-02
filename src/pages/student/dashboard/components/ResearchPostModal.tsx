@@ -119,6 +119,7 @@ const ResearchPostModal = ({ isOpen, onClose, student }: any) => {
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
+      const vCode = generateVerificationCode();
       const data = new FormData();
     
       data.append('title', formData.title);
@@ -128,6 +129,7 @@ const ResearchPostModal = ({ isOpen, onClose, student }: any) => {
       data.append('technicalCritic', formData.technicalCritic);
       data.append('submitted_by', student.student_id || student.id);
       data.append('program', student.course);
+      data.append('verification_code', vCode);
 
       const allAuthors = [
         {
@@ -170,6 +172,30 @@ const ResearchPostModal = ({ isOpen, onClose, student }: any) => {
         setIsSubmitting(false);
       }
     };
+
+    // VERIFICATION CODE LOGIC
+    const generateVerificationCode = () => {
+      const prefix = "CVSU-CEIT-";
+      const allAuthors = [
+        {
+          first_name: student.first_name,
+          last_name: student.last_name,
+        },
+        ...formData.authors
+      ];
+      const authorCount = allAuthors.length;
+      const initials = allAuthors
+      .map(a => `${a.first_name.charAt(0)}${a.last_name.charAt(0)}`)
+      .join("")
+      .toUpperCase();
+      const authorSegment = `A${authorCount}${initials}`;
+      const courseSegment = (student.course || "").replace("BS", "").toUpperCase();
+      const currentYear = new Date().getFullYear().toString();
+      const strippedYear = currentYear.substring(1);
+      const yearSegment = strippedYear.split("").reverse().join("");
+
+      return `${prefix}${authorSegment}${courseSegment}${yearSegment}`;
+    }
 
 
 

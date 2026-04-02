@@ -18,6 +18,7 @@ import StudentBookCatalog from "./scenes/bookCatalog";
 import MyBorrowingHistory from "./scenes/borrowingHistory";
 import StudentProfile from "./scenes/profile";
 import ResearchPostModal from "./components/ResearchPostModal";
+import PendingResearchFeed from "./components/PendingResearchFeed";
 import { API_BASE_URL } from "@/API/APIConfig";
 
 const StudentDashboard = () => {
@@ -121,6 +122,8 @@ const StudentDashboard = () => {
                   Submit a new project...
                 </button>
               </div>
+
+              <PendingResearchFeed student={student}/>
             </div>
           )}
 
