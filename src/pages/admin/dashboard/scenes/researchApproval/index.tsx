@@ -16,7 +16,6 @@ const ResearchApproval = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("pending");
 
-  // FIXED: Removed the duplicate function definition
   const fetchSubmissions = async () => {
     try {
       const response = await axios.get(`${API_BASE_URL}/admin/get_all_research.php?t=${Date.now()}`);

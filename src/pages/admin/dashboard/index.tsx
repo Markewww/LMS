@@ -1,17 +1,20 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { motion } from "framer-motion";
-import { MonitorXIcon, LogOutIcon } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { MonitorXIcon, LogOutIcon, UsersIcon, ChevronDownIcon } from "lucide-react"; // Removed Users, BookOpen, Clock
 import Sidebar from "@/pages/admin/scenes/sidebar";
 
-// Import Scenes for each tab (for now, we will just show placeholders)
+// Import Scenes
 import AdminManagement from "@/pages/admin/dashboard/scenes/adminManagement";
 import StudentManagement from "@/pages/admin/dashboard/scenes/studentManagement";
 import AttendanceLog from "@/pages/admin/dashboard/scenes/activityLogs/attendance";
 import CirculationLog from "@/pages/admin/dashboard/scenes/activityLogs/circulation";
 import BookInventory from "@/pages/admin/dashboard/scenes/bookInventory";
 import ResearchApproval from "@/pages/admin/dashboard/scenes/researchApproval";
+
+// Dashboard Components
+import AttendanceGraph from "@/pages/admin/dashboard/components/attendanceGraph";
 
 // API CONFIG FILE
 import { API_BASE_URL } from "@/API/APIConfig";
@@ -21,6 +24,10 @@ const AdminDashboard = () => {
   const [admin, setAdmin] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("dashboard");
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+  const [showAttendanceGraph, setShowAttendanceGraph] = useState(false);
+
+  // Note: DashboardStats, stats, statsLoading, and fetchStats were removed 
+  // because they were not being used in this version of the component.
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 1024);
@@ -54,7 +61,6 @@ const AdminDashboard = () => {
 
   if (!admin) return null;
 
-  // --- MOBILE RESTRICTION VIEW ---
   if (isMobile) {
     return (
       <div className="h-screen w-full flex flex-col items-center justify-center bg-white p-10 text-center font-dm">
@@ -86,7 +92,6 @@ const AdminDashboard = () => {
 
   return (
     <div className="flex min-h-screen bg-cvsu-bg font-dm">
-      {/* SIDEBAR */}
       <Sidebar 
         activeTab={activeTab} 
         setActiveTab={setActiveTab} 
@@ -94,7 +99,6 @@ const AdminDashboard = () => {
         userType={admin?.type}
       />
 
-      {/* MAIN CONTENT AREA */}
       <main className="ml-64 flex-1 p-8">
         <header className="mb-8">
           <h1 className="text-3xl font-montserrat font-black text-cvsu-green-base uppercase">
@@ -103,29 +107,46 @@ const AdminDashboard = () => {
           <p className="text-cvsu-gray italic text-sm">Welcome back, {admin.id}</p>
         </header>
 
-        {/* DYNAMIC CONTENT LOADED HERE */}
         <div className="bg-white rounded-2xl shadow-sm p-8 min-h-90">
           {activeTab === "dashboard" && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-               <div className="ceit-card border-t-4 border-cvsu-green-base">
-                  <p className="text-xs font-bold text-cvsu-gray uppercase">Active Visitors</p>
-                  <p className="text-4xl font-black text-cvsu-green-base">12</p>
+            <div className="space-y-6">
+               <div onClick={() => setShowAttendanceGraph(!showAttendanceGraph)} className="bg-white border-2 border-gray-50 p-6 rounded-2xl cursor-pointer hover:border-cvsu-green-base transition-all group flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="bg-cvsu-green-50 p-3 rounded-xl text-cvsu-green-base group-hover:bg-cvsu-green-base group-hover:text-white transition-colors">
+                      <UsersIcon size={24} />
+                    </div>
+
+                    <div>
+                      <h3 className="font-montserrat font-black text-cvsu-green-dark uppercase">Attendance Analytics</h3>
+                      <p className="text-xs text-gray-500 italic">Click to {showAttendanceGraph ? 'hide' : 'view'} visitor statistics</p>
+                    </div>
+                  </div>
+                  <motion.div
+                  animate={{ rotate: showAttendanceGraph ? 180 : 0 }}
+                  className="text-gray-400"
+                >
+                  <ChevronDownIcon size={24} />
+                </motion.div>
                </div>
-               <div className="ceit-card border-t-4 border-cvsu-green-base">
-                  <p className="text-xs font-bold text-cvsu-gray uppercase">Books Borrowed</p>
-                  <p className="text-4xl font-black text-cvsu-green-base">45</p>
-               </div>
-               <div className="ceit-card border-t-4 border-cvsu-green-base">
-                  <p className="text-xs font-bold text-cvsu-gray uppercase">Pending Approvals</p>
-                  <p className="text-4xl font-black text-cvsu-green-base">3</p>
-               </div>
+               <AnimatePresence>
+                {showAttendanceGraph && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    className="overflow-hidden"
+                  >
+                    <AttendanceGraph />
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           )}
           
-          {/* Active Tabs */}
           {activeTab === "admin-management" && admin?.type === "superadmin" && (
             <AdminManagement />
-            )}
+          )}
           {activeTab === "students" && (admin?.type === "admin" || admin?.type === "superadmin") && (
             <StudentManagement />
           )}
@@ -143,7 +164,6 @@ const AdminDashboard = () => {
             </div>
 
           )}
-
         </div>
       </main>
     </div>
