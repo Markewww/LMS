@@ -90,7 +90,7 @@ const Timeline = ({ student }: { student: any }) => {
                 <h4 className="font-bold text-gray-900 leading-tight text-lg">{post.title}</h4>
                 <div className="text-xs text-gray-500 leading-relaxed">
                   {isExpanded || post.abstract.length <= abstractLimit ? (
-                    <p>{post.abstract}</p>
+                    <p className="text-justify">{post.abstract}</p>
                   ) : (
                     <p>
                       {post.abstract.substring(0, abstractLimit)}...

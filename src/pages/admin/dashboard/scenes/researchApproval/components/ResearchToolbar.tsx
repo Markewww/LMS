@@ -8,7 +8,6 @@ type Props = {
 };
 
 const ResearchToolbar = ({ searchTerm, setSearchTerm, filterStatus, setFilterStatus }: Props) => {
-  // Statuses specific to Research Approval
   const statuses = ["all", "pending", "approved", "rejected"];
 
   return (

@@ -7,6 +7,7 @@ import Register from "@/pages/register";
 // Admin Scenes
 import AdminDashboard from "@/pages/admin/dashboard";
 import AttendanceKiosk from "@/pages/admin/dashboard/scenes/activityLogs/attendance/components/AttendanceKiosk";
+import CirculationKiosk from "@/pages/admin/dashboard/scenes/activityLogs/circulation/components/CirculationKiosk";
 // Student Scenes
 import StudentDashboard from "@/pages/student/dashboard";
 
@@ -21,7 +22,7 @@ function App() {
           {/* Admin Routes */}
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/admin/dashboard/attendance-kiosk" element={<AttendanceKiosk />} />
-
+          <Route path="/admin/dashboard/circulation-kiosk" element={<CirculationKiosk />} />
           {/* Student Routes */}
           <Route path="/student/dashboard" element={<StudentDashboard />} />
 
