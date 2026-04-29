@@ -1,6 +1,7 @@
 import useMediaQuery from "@/hooks/useMediaQuery";
 import { SelectedPage } from "@/shared/types";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import AnchorLink from "react-anchor-link-smooth-scroll";
 
 type Props = {
@@ -9,6 +10,7 @@ type Props = {
 
 const Home = ({ setSelectedPage }: Props) => {
   const isAboveMediumScreens = useMediaQuery("(min-width: 1060px)");
+  const navigate = useNavigate();
 
   return (
     <section id="home" className="gap-16 py-10 h-screen md:h-full md:pb-0 bg-white">
@@ -56,8 +58,10 @@ const Home = ({ setSelectedPage }: Props) => {
               visible: { opacity: 1, x: 0 },
             }}
           >
-            <button className="bg-cvsu-green-base text-white font-montserrat font-bold px-10 py-2 rounded-lg border-2 border-cvsu-green-base transition-all duration-300 hover:bg-white hover:text-cvsu-green-base">
-                SCAN TO ENTER
+            <button 
+            onClick={() => navigate("/register")}
+            className="bg-cvsu-green-base text-white font-montserrat font-bold px-10 py-2 rounded-lg border-2 border-cvsu-green-base transition-all duration-300 hover:bg-white hover:text-cvsu-green-base">
+                JOIN NOW
             </button>
             <AnchorLink
               className="text-sm font-bold text-cvsu-green-base underline hover:text-cvsu-green-dark"

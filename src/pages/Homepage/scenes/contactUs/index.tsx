@@ -130,7 +130,7 @@ const ContactUs = ({ setSelectedPage }: Props) => {
           >
             <div className="w-full before:absolute before:-bottom-20 before:-right-10 before:z-[-1] md:before:content-['']">
               <div className="bg-cvsu-green-base h-100 w-full rounded-2xl flex items-center justify-center text-white font-montserrat font-bold">
-                [ CEIT LOGO / MAP ]
+                [ MAP ]
               </div>
             </div>
           </motion.div>
