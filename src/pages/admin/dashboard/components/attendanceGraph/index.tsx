@@ -1,47 +1,30 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 import { API_BASE_URL } from "@/API/APIConfig";
 import Toolbar from "./Toolbar";
+import  { courseColors } from "./courseColors";
 
 interface GraphData {
   month: string;
-  [key: string]: any; 
+  [key: string]: string | number; 
 }
-
-export const courseColors: { [key: string]: string } = {
-  "BSABE": "#1B4D3E",   
-  "BSARCHI": "#D97706", 
-  "BSCE": "#2563EB",    
-  "BSCpE": "#DC2626",   
-  "BSCS": "#7C3AED",    
-  "BSEE": "#059669",    
-  "BSECE": "#DB2777",   
-  "BSIE": "#4B5563",    
-  "BSIT-AT": "#0D9488", 
-  "BSIT-ET": "#EA580C", 
-  "BSIT-ELEX": "#B45309",
-  "BSIT": "#0284C7"     
-};
 
 const AttendanceGraph = () => {
   const currentYear = new Date().getFullYear().toString();
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [selectedCourse, setSelectedCourse] = useState(""); 
-  
   const [data, setData] = useState<GraphData[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // ✅ REMOVED: hoveredData state that caused the warning
-
-  const fetchGraphData = async () => {
+  const fetchGraphData = useCallback(async () => {
     try {
       setLoading(true);
       const response = await axios.get(`${API_BASE_URL}/admin/get_attendance_graph.php`, {
-        params: { 
+        params: {
           year: selectedYear,
-          course: selectedCourse
-        }
+          course: selectedCourse,
+        },
       });
       setData(response.data);
     } catch (error) {
@@ -49,21 +32,29 @@ const AttendanceGraph = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    fetchGraphData();
   }, [selectedYear, selectedCourse]);
 
-  const activeCourses = selectedCourse 
-    ? [selectedCourse] 
-    : Object.keys(courseColors);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchGraphData();
+    }, 500); // 500ms debounce
 
-  // --- 1. CUSTOM CURSOR TOOLTIP ---
-  const CustomTooltip = ({ active, payload }: any) => {
+    return () => clearTimeout(timer);
+  }, [fetchGraphData]);
+
+  // --- 1. TRANSFORM DATA FOR ALL PROGRAMS ---
+  // If no course is selected, calculate a combined 'total' field for each month
+  const processedData = selectedCourse
+    ? data
+    : data.map((item) => ({
+        ...item,
+        total: Object.keys(courseColors).reduce((sum, course) => sum + (Number(item[course]) || 0), 0),
+      }));
+
+  // --- 2. CUSTOM CURSOR TOOLTIP ---
+  const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ value: number }> }) => {
     if (active && payload && payload.length) {
-      const totalVisits = payload.reduce((sum: number, entry: any) => sum + entry.value, 0);
-      
+      const totalVisits = payload.reduce((sum: number, entry) => sum + entry.value, 0);
       return (
         <div className="bg-cvsu-green-dark text-white px-3 py-1.5 rounded-lg text-xs font-montserrat font-black shadow-lg flex flex-col items-center">
           <span>{totalVisits} Total</span>
@@ -82,15 +73,15 @@ const AttendanceGraph = () => {
           <p className="text-xs text-gray-400 italic">Student traffic trends grouped by program</p>
         </div>
       </div>
-
-      <Toolbar 
+      
+      <Toolbar
         selectedYear={selectedYear}
         setSelectedYear={setSelectedYear}
         selectedCourse={selectedCourse}
         setSelectedCourse={setSelectedCourse}
         onRefresh={fetchGraphData}
       />
-
+      
       <div className="h-87.5 w-full bg-gray-50/50 rounded-3xl p-6 border border-gray-100">
         {loading ? (
           <div className="h-full flex items-center justify-center text-gray-400 font-bold italic animate-pulse">
@@ -98,36 +89,45 @@ const AttendanceGraph = () => {
           </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
-            {/* ✅ REMOVED: onMouseMove and onMouseLeave handlers referencing setHoveredData */}
-            <AreaChart data={data}>
+            <AreaChart data={processedData}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
               <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 700}} />
               <YAxis axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 700}} />
+              <Tooltip content={<CustomTooltip />} position={{ y: 20 }} />
               
-              <Tooltip 
-                content={<CustomTooltip />}
-                position={{ y: 20 }} 
-              />
+              {/* --- 3. CONDITIONAL LEGEND --- */}
+              {selectedCourse && (
+                <Legend
+                  verticalAlign="top"
+                  height={40}
+                  iconType="circle"
+                  wrapperStyle={{ fontSize: '10px', fontWeight: 'bold', fontFamily: 'Montserrat' }}
+                />
+              )}
 
-              <Legend 
-                verticalAlign="top" 
-                height={40} 
-                iconType="circle"
-                wrapperStyle={{ fontSize: '10px', fontWeight: 'bold', fontFamily: 'Montserrat' }}
-              />
-              
-              {activeCourses.map((course) => (
+              {/* --- 4. CONDITIONAL AREA RENDERING --- */}
+              {!selectedCourse ? (
+                // Shown when "All programs" is selected
                 <Area
-                  key={course}
                   type="monotone"
-                  dataKey={course}
-                  stackId="1" 
-                  stroke={courseColors[course]}
-                  fill={courseColors[course]}
+                  dataKey="total"
+                  stroke="#1B4D3E" // CVSU Green color
+                  fill="#1B4D3E"
                   fillOpacity={0.2}
                   strokeWidth={2}
                 />
-              ))}
+              ) : (
+                // Shown when a specific program is selected
+                <Area
+                  key={selectedCourse}
+                  type="monotone"
+                  dataKey={selectedCourse}
+                  stroke={courseColors[selectedCourse]}
+                  fill={courseColors[selectedCourse]}
+                  fillOpacity={0.2}
+                  strokeWidth={2}
+                />
+              )}
             </AreaChart>
           </ResponsiveContainer>
         )}

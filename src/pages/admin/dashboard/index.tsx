@@ -2,7 +2,11 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
-import { MonitorXIcon, LogOutIcon, UsersIcon, ChevronDownIcon } from "lucide-react"; // Removed Users, BookOpen, Clock
+import { MonitorXIcon, 
+  LogOutIcon, 
+  UsersIcon, 
+  ChevronDownIcon,
+ } from "lucide-react";
 import Sidebar from "@/pages/admin/scenes/sidebar";
 
 // Import Scenes
@@ -15,47 +19,62 @@ import ResearchApproval from "@/pages/admin/dashboard/scenes/researchApproval";
 
 // Dashboard Components
 import AttendanceGraph from "@/pages/admin/dashboard/components/attendanceGraph";
+import DashboardStats from "@/pages/admin/dashboard/components/DashboardStats";
+import DashboardAnnouncements from "@/pages/admin/dashboard/components/DashboardAnnouncements";
 
 // API CONFIG FILE
 import { API_BASE_URL } from "@/API/APIConfig";
 
+interface Admin {
+  id: string;
+  type: "superadmin" | "admin";
+}
+
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const [admin, setAdmin] = useState<any>(null);
+  const [admin] = useState<Admin | null>(() => {
+    try {
+      const loggedInUser = localStorage.getItem("user");
+      if (!loggedInUser) return null;
+
+      const parsedUser = JSON.parse(loggedInUser) as Partial<Admin>;
+      if (parsedUser.type !== "superadmin" && parsedUser.type !== "admin") {
+        return null;
+      }
+
+      return {
+        id: parsedUser.id ?? "",
+        type: parsedUser.type as Admin["type"],
+      };
+    } catch {
+      return null;
+    }
+  });
   const [activeTab, setActiveTab] = useState("dashboard");
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
   const [showAttendanceGraph, setShowAttendanceGraph] = useState(false);
-
-  // Note: DashboardStats, stats, statsLoading, and fetchStats were removed 
-  // because they were not being used in this version of the component.
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 1024);
     window.addEventListener("resize", handleResize);
 
-    const loggedInUser = localStorage.getItem("user");
-    if (!loggedInUser) {
-      navigate("/login");
-    } else {
-      const parsedUser = JSON.parse(loggedInUser);
-      if (parsedUser.type !== "superadmin" && parsedUser.type !== "admin") {
-        navigate("/login");
-      } else {
-        setAdmin(parsedUser);
-      }
-    }
-
     return () => window.removeEventListener("resize", handleResize);
-  }, [navigate]);
+  }, []);
+
+  useEffect(() => {
+    if (!admin) {
+      navigate("/login");
+    }
+  }, [admin, navigate]);
 
   const handleLogout = async () => {
     try {
       await axios.post(`${API_BASE_URL}/logout.php`);
+    } catch {
+      // Ignore logout request failure and continue with local cleanup.
+    } finally {
       localStorage.removeItem("user");
       navigate("/login", { replace: true });
-    } catch (error) {
-      localStorage.removeItem("user");
-      navigate("/login");
     }
   };
 
@@ -107,9 +126,10 @@ const AdminDashboard = () => {
           <p className="text-cvsu-gray italic text-sm">Welcome back, {admin.id}</p>
         </header>
 
-        <div className="bg-white rounded-2xl shadow-sm p-8 min-h-90">
+        <div className="bg-white rounded-2xl shadow-sm p-8 min-h-40">
           {activeTab === "dashboard" && (
             <div className="space-y-6">
+              <DashboardStats />
                <div onClick={() => setShowAttendanceGraph(!showAttendanceGraph)} className="bg-white border-2 border-gray-50 p-6 rounded-2xl cursor-pointer hover:border-cvsu-green-base transition-all group flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <div className="bg-cvsu-green-50 p-3 rounded-xl text-cvsu-green-base group-hover:bg-cvsu-green-base group-hover:text-white transition-colors">
@@ -141,6 +161,7 @@ const AdminDashboard = () => {
                   </motion.div>
                 )}
               </AnimatePresence>
+              <DashboardAnnouncements currentAdminId={admin.id} />
             </div>
           )}
           
