@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useForm } from "react-hook-form";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -149,9 +150,9 @@ const Register = () => {
               <option value="BSECE">Bachelor of Science in Electronics Engineering</option>
               <option value="BSIE">Bachelor of Science in Industrial Engineering</option>
               <optgroup label="Bachelor of Science in Industrial Technology Major in:">
-                  <option value="BSIT-AT">Automotive Technology</option>
-                  <option value="BSIT-ET">Electrical Technology</option>
-                  <option value="BSIT-ELEX">Electronics Technology</option>
+                  <option value="BSIndT-AT">Automotive Technology</option>
+                  <option value="BSIndT-ET">Electrical Technology</option>
+                  <option value="BSIndT-ELEX">Electronics Technology</option>
               </optgroup>
               <option value="BSIT">Bachelor of Science in Information Technology</option>
             </select>

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { UseFormRegister, UseFormHandleSubmit } from "react-hook-form";
 
 type FormFieldProps = {
@@ -44,15 +45,20 @@ const FormField = ({ register, handleSubmit, onSaveChanges }: FormFieldProps) =>
                 <label className={labelStyle}>Program (Course)</label>
                 <select {...register("course", { required: true })} className={inputStyle}>
                     <option value="">Select Program</option>
-                    <option value="BSABE">BS Agricultural and Biosystems Engineering</option>
-                    <option value="BS ARCHI">BS Architecture</option>
-                    <option value="BSCE">BS Civil Engineering</option>
-                    <option value="BSCpE">BS Computer Engineering</option>
-                    <option value="BSCS">BS Computer Science</option>
-                    <option value="BSEE">BS Electrical Engineering</option>
-                    <option value="BSECE">BS Electronics Engineering</option>
-                    <option value="BSIE">BS Industrial Engineering</option>
-                    <option value="BSIT">BS Information Technology</option>
+                    <option value="BSABE">Bachelor of Science in Agricultural and Biosystems Engineering</option>
+                    <option value="BSARCHI">Bachelor of Science in Architecture</option>
+                    <option value="BSCE">Bachelor of Science in Civil Engineering</option>
+                    <option value="BSCpE">Bachelor of Science in Computer Engineering</option>
+                    <option value="BSCS">Bachelor of Science in Computer Science</option>
+                    <option value="BSEE">Bachelor of Science in Electrical Engineering</option>
+                    <option value="BSECE">Bachelor of Science in Electronics Engineering</option>
+                    <option value="BSIE">Bachelor of Science in Industrial Engineering</option>
+                    <optgroup label="Bachelor of Science in Industrial Technology Major in:">
+                        <option value="BSIndT-AT">Automotive Technology</option>
+                        <option value="BSIndT-ET">Electrical Technology</option>
+                        <option value="BSIndT-ELEX">Electronics Technology</option>
+                    </optgroup>
+                    <option value="BSIT">Bachelor of Science in Information Technology</option>
                 </select>
             </div>
         </div>

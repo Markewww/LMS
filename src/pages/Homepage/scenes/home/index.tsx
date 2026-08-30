@@ -35,6 +35,9 @@ const Home = ({ setSelectedPage }: Props) => {
           >
             <div className="relative">
               <div className="before:absolute before:-top-20 before:-left-20 before:z-[-1] md:before:content-['']">
+                <p className="text-sm md:text-sm font-montserrat font-bold text-cvsu-gray">
+                  College of Engineering and Information Technology
+                </p>
                 <h1 className='text-5xl md:text-7xl font-montserrat font-black text-cvsu-green-base uppercase tracking-tight'>
                    CEIT READING ROOM
                 </h1>
