@@ -1,22 +1,29 @@
-import { useEffect, useState, useCallback } from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+// src\pages\admin\dashboard\components\attendanceGraph\index.tsx
+import { useEffect, useState, useCallback, useMemo } from "react";
 import axios from "axios";
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
+import {
+  ResponsiveContainer, AreaChart, Area, XAxis, YAxis,
+  CartesianGrid, Tooltip, Legend
+} from "recharts";
 import { API_BASE_URL } from "@/API/APIConfig";
 import Toolbar from "./Toolbar";
-import  { courseColors } from "./courseColors";
+import { courseColors } from "./courseColors";
 
 interface GraphData {
-  month: string;
-  [key: string]: string | number; 
+  xAxisKey: string; 
+  [key: string]: string | number;
 }
 
 const AttendanceGraph = () => {
   const currentYear = new Date().getFullYear().toString();
   const [selectedYear, setSelectedYear] = useState(currentYear);
-  const [selectedCourse, setSelectedCourse] = useState(""); 
+  const [selectedCourse, setSelectedCourse] = useState("");
+  const [selectedRange, setSelectedRange] = useState("1Y"); 
   const [data, setData] = useState<GraphData[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // FIXED PARAMETER REFERENCE: Merged space-fragmented variables safely
   const fetchGraphData = useCallback(async () => {
     try {
       setLoading(true);
@@ -24,41 +31,44 @@ const AttendanceGraph = () => {
         params: {
           year: selectedYear,
           course: selectedCourse,
+          range: selectedRange 
         },
       });
-      setData(response.data);
+      if (Array.isArray(response.data)) {
+        setData(response.data);
+      }
     } catch (error) {
       console.error("Graph Error:", error);
     } finally {
       setLoading(false);
     }
-  }, [selectedYear, selectedCourse]);
+  }, [selectedYear, selectedCourse, selectedRange]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       fetchGraphData();
-    }, 500); // 500ms debounce
-
+    }, 300); 
     return () => clearTimeout(timer);
   }, [fetchGraphData]);
 
-  // --- 1. TRANSFORM DATA FOR ALL PROGRAMS ---
-  // If no course is selected, calculate a combined 'total' field for each month
-  const processedData = selectedCourse
-    ? data
-    : data.map((item) => ({
-        ...item,
-        total: Object.keys(courseColors).reduce((sum, course) => sum + (Number(item[course]) || 0), 0),
-      }));
+  const processedData = useMemo(() => {
+    if (selectedCourse) return data;
+    return data.map((item) => ({
+      ...item,
+      total: Object.keys(courseColors).reduce(
+        (sum, course) => sum + (Number(item[course]) || 0), 
+        0
+      ),
+    }));
+  }, [data, selectedCourse]);
 
-  // --- 2. CUSTOM CURSOR TOOLTIP ---
   const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ value: number }> }) => {
     if (active && payload && payload.length) {
       const totalVisits = payload.reduce((sum: number, entry) => sum + entry.value, 0);
       return (
         <div className="bg-cvsu-green-dark text-white px-3 py-1.5 rounded-lg text-xs font-montserrat font-black shadow-lg flex flex-col items-center">
-          <span>{totalVisits} Total</span>
-          <div className="w-2 h-2 bg-cvsu-green-dark rotate-45 mt-1 -mb-2"></div>
+          <span>{totalVisits} Total Students</span>
+          <div className="w-2 h-2 bg-cvsu-green-dark rotate-45 mt-1 -mb-1"></div>
         </div>
       );
     }
@@ -66,23 +76,32 @@ const AttendanceGraph = () => {
   };
 
   return (
-    <div className="mt-8">
-      <div className="flex items-center justify-between mb-4">
+    <div className="mt-8 font-dm">
+      {/* Title Segment Row */}
+      <div className="flex items-center justify-between mb-4 text-left">
         <div>
-          <h2 className="text-lg font-montserrat font-black text-cvsu-green-dark uppercase">Attendance Analytics</h2>
-          <p className="text-xs text-gray-400 italic">Student traffic trends grouped by program</p>
+          <h2 className="text-lg font-montserrat font-black text-cvsu-green-dark uppercase">
+            Attendance Analytics
+          </h2>
+          <p className="text-xs text-gray-400 italic">
+            Student Reading Room Visits
+          </p>
         </div>
       </div>
-      
+
+      {/* Controller Filters Toolbar Section */}
       <Toolbar
         selectedYear={selectedYear}
         setSelectedYear={setSelectedYear}
         selectedCourse={selectedCourse}
         setSelectedCourse={setSelectedCourse}
+        selectedRange={selectedRange}
+        setSelectedRange={setSelectedRange} 
         onRefresh={fetchGraphData}
       />
-      
-      <div className="h-87.5 w-full bg-gray-50/50 rounded-3xl p-6 border border-gray-100">
+
+      {/* Main Core Chart Container Display Area */}
+      <div className="h-87.5 w-full bg-gray-50/50 rounded-3xl p-6 border border-gray-100 mt-4">
         {loading ? (
           <div className="h-full flex items-center justify-center text-gray-400 font-bold italic animate-pulse">
             Fetching analytics...
@@ -91,11 +110,20 @@ const AttendanceGraph = () => {
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={processedData}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-              <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 700}} />
-              <YAxis axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 700}} />
+              {/* Dynamic dataKey tracks whatever timeline string configuration PHP produces */}
+              <XAxis
+                dataKey="xAxisKey"
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 10, fontWeight: 700 }}
+              />
+              <YAxis
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 10, fontWeight: 700 }}
+              />
               <Tooltip content={<CustomTooltip />} position={{ y: 20 }} />
-              
-              {/* --- 3. CONDITIONAL LEGEND --- */}
+
               {selectedCourse && (
                 <Legend
                   verticalAlign="top"
@@ -105,25 +133,22 @@ const AttendanceGraph = () => {
                 />
               )}
 
-              {/* --- 4. CONDITIONAL AREA RENDERING --- */}
               {!selectedCourse ? (
-                // Shown when "All programs" is selected
                 <Area
                   type="monotone"
                   dataKey="total"
-                  stroke="#1B4D3E" // CVSU Green color
+                  stroke="#1B4D3E"
                   fill="#1B4D3E"
                   fillOpacity={0.2}
                   strokeWidth={2}
                 />
               ) : (
-                // Shown when a specific program is selected
                 <Area
                   key={selectedCourse}
                   type="monotone"
                   dataKey={selectedCourse}
-                  stroke={courseColors[selectedCourse]}
-                  fill={courseColors[selectedCourse]}
+                  stroke={courseColors[selectedCourse] || "#1B4D3E"}
+                  fill={courseColors[selectedCourse] || "#1B4D3E"}
                   fillOpacity={0.2}
                   strokeWidth={2}
                 />

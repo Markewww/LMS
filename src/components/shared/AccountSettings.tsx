@@ -46,9 +46,9 @@ const AccountSettings = () => {
         {isFormExpanded && (
           <motion.div
             key="password-form-drawer"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
             transition={{ type: "spring", duration: 0.4, bounce: 0 }}
             className="overflow-hidden"
           >

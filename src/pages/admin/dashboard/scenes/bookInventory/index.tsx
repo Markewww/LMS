@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/set-state-in-effect */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { motion } from "framer-motion";
@@ -59,12 +61,14 @@ const BookInventory = () => {
 
     return matchesSearch && matchesType && matchesGenre && matchesYear && matchesStatus;
   });
-  const handleDeleteBook = async (bookId: string) => {
+  const handleDeleteBook = async (bookId: string | number) => {
     if (!window.confirm("Are you sure you want to delete this book?")) return;
-    
+
+    const normalizedBookId = String(bookId);
+
     try {
       const response = await axios.post(`${API_BASE_URL}/admin/delete_book.php`, {
-        book_id: bookId
+        book_id: normalizedBookId
       });
 
       if (response.data.success) {
@@ -96,8 +100,9 @@ const BookInventory = () => {
 
   return (
     <motion.div 
-      initial={{ opacity: 0, x: 20 }} 
-      animate={{ opacity: 1, x: 0 }} 
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
       className="space-y-6 font-dm"
     >
       {/* BOOK DETAIL/EDIT MODAL */}

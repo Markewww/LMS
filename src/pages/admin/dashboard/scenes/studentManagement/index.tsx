@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/set-state-in-effect */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { motion } from "framer-motion";
@@ -69,8 +71,9 @@ const StudentManagement = () => {
 
   return (
     <motion.div 
-      initial={{ opacity: 0, x: 20 }} 
-      animate={{ opacity: 1, x: 0 }} 
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
       className="space-y-6 font-dm"
     >
       {/* STUDENT DETAIL MODAL */}

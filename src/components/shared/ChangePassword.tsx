@@ -65,7 +65,7 @@ const ChangePassword = ({ onSuccessClose }: ChangePasswordProps) => {
   const labelStyles = "block text-[10px] font-black text-gray-400 uppercase tracking-wider font-montserrat";
 
   return (
-    <div className="pt-4 max-w-xl text-left">
+    <div className="pt-4 max-w-full text-left">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         
         {/* INPUT: CURRENT PASSWORD */}
