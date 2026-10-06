@@ -1,7 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+// src\components\ui\alerts\NotificationModal.tsx
 import { motion, AnimatePresence } from "framer-motion";
-import { XIcon, CheckCircle2Icon, AlertTriangleIcon, XCircleIcon, InfoIcon } from "lucide-react";
+import { X, CheckCircle2, AlertTriangle, XCircle, Info } from "lucide-react";
 
+// Explicitly mapping exact parameter models
 export type AlertType = "success" | "warning" | "error" | "info";
 
 interface NotificationModalProps {
@@ -13,22 +15,30 @@ interface NotificationModalProps {
 }
 
 const typeStyles: Record<AlertType, { bg: string; icon: any; color: string; border: string }> = {
-  success: { bg: "bg-emerald-50", icon: CheckCircle2Icon, color: "text-emerald-600", border: "border-emerald-100" },
-  warning: { bg: "bg-amber-50", icon: AlertTriangleIcon, color: "text-amber-600", border: "border-amber-100" },
-  error: { bg: "bg-red-50", icon: XCircleIcon, color: "text-red-600", border: "border-red-100" },
-  info: { bg: "bg-blue-50", icon: InfoIcon, color: "text-blue-600", border: "border-blue-100" }
+  success: { bg: "bg-emerald-50", icon: CheckCircle2, color: "text-emerald-600", border: "border-emerald-100" },
+  warning: { bg: "bg-amber-50", icon: AlertTriangle, color: "text-amber-600", border: "border-amber-100" },
+  error: { bg: "bg-red-50", icon: XCircle, color: "text-red-600", border: "border-red-100" },
+  info: { bg: "bg-blue-50", icon: Info, color: "text-blue-600", border: "border-blue-100" }
 };
 
 const NotificationModal = ({ isOpen, onClose, type, title, message }: NotificationModalProps) => {
   const currentStyle = typeStyles[type];
+  if (!currentStyle) return null;
   const Icon = currentStyle.icon;
 
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs font-dm">
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="absolute inset-0" />
-
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs font-dm">
+          {/* Dismiss Back-layer canvas shield click interceptor mask */}
+          <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            exit={{ opacity: 0 }}
+            onClick={onClose} 
+            className="absolute inset-0" 
+          />
+          
           <motion.div
             initial={{ scale: 0.95, opacity: 0, y: 10 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
@@ -36,8 +46,12 @@ const NotificationModal = ({ isOpen, onClose, type, title, message }: Notificati
             transition={{ type: "spring", damping: 25, stiffness: 350 }}
             className={`bg-white border rounded-2xl p-6 shadow-xl w-full max-w-sm overflow-hidden relative z-10 ${currentStyle.border}`}
           >
-            <button onClick={onClose} className="absolute top-4 right-4 p-1 text-gray-400 hover:text-gray-600 rounded-lg transition-colors cursor-pointer">
-              <XIcon size={16} />
+            {/* Top absolute position close panel pin button handle */}
+            <button 
+              onClick={onClose} 
+              className="absolute top-4 right-4 p-1 text-gray-400 hover:text-gray-600 rounded-lg transition-colors cursor-pointer"
+            >
+              <X size={16} />
             </button>
 
             <div className="flex flex-col items-center text-center space-y-3 mt-2">
@@ -45,8 +59,12 @@ const NotificationModal = ({ isOpen, onClose, type, title, message }: Notificati
                 <Icon size={28} />
               </div>
               <div className="space-y-1">
-                <h4 className="text-base font-montserrat font-black uppercase text-gray-800 tracking-wide">{title}</h4>
-                <p className="text-sm text-gray-500 leading-relaxed font-medium">{message}</p>
+                <h4 className="text-base font-montserrat font-black uppercase text-gray-800 tracking-wide">
+                  {title}
+                </h4>
+                <p className="text-sm text-gray-500 leading-relaxed font-medium">
+                  {message}
+                </p>
               </div>
             </div>
 
@@ -54,7 +72,7 @@ const NotificationModal = ({ isOpen, onClose, type, title, message }: Notificati
               onClick={onClose}
               className="w-full mt-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer text-white shadow-md bg-cvsu-green-base hover:bg-cvsu-green-dark"
             >
-              Acknowledge
+              Return
             </button>
           </motion.div>
         </div>

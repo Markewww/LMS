@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -19,7 +21,9 @@ import MyBorrowingHistory from "./scenes/borrowingHistory";
 import StudentProfile from "./scenes/profile";
 import ResearchPostModal from "./components/ResearchPostModal";
 import PendingResearchFeed from "./components/PendingResearchFeed";
+import AnnouncementFeed from "./components/AnnouncementFeed";
 import { API_BASE_URL } from "@/API/APIConfig";
+import AccountSettings from "@/components/shared/AccountSettings";
 
 const StudentDashboard = () => {
   const navigate = useNavigate();
@@ -62,7 +66,7 @@ const StudentDashboard = () => {
       await axios.post(`${API_BASE_URL}/logout.php`);
       localStorage.removeItem("user");
       navigate("/login", { replace: true });
-    } catch (error) {
+    } catch {
       localStorage.removeItem("user");
       navigate("/login");
     }
@@ -83,13 +87,30 @@ const StudentDashboard = () => {
         <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} handleLogout={handleLogout} />
       )}
 
-      <main className={`flex-1 flex flex-col ${isAboveMediumScreens ? "ml-64" : "ml-0"}`}>
+      <main className={`flex-1 flex flex-col min-w-0 overflow-hidden ${isAboveMediumScreens ? "ml-64" : "ml-0"}`}>
         
         {/* MOBILE HEADER & TABS (Facebook Style) */}
         {!isAboveMediumScreens && (
           <div className="sticky top-0 z-50 bg-white border-b border-gray-100">
             <div className="flex items-center justify-between px-4 pt-4 pb-2">
-              <h1 className="text-xl font-black text-cvsu-green-base uppercase tracking-tighter">CEIT Library</h1>
+              {/* ─── MODIFIED BRANDING: JUSTIFIED TYPOGRAPHY LAYOUT ─── */}
+              <div className="flex flex-col text-left select-none max-w-[80%]">
+                
+                {/* Upper Subtitle: Row 1 */}
+                <span className="text-[9.5px] font-black uppercase text-gray-400 tracking-[0.14em] leading-none block whitespace-nowrap">
+                  College of Engineering
+                </span>
+                
+                {/* Upper Subtitle: Row 2 */}
+                <span className="text-[9px] font-black uppercase text-gray-400 tracking-[0.02em] leading-none block mt-1 whitespace-nowrap">
+                  and Information Technology
+                </span>
+                
+                {/* Main Heading Title Anchor */}
+                <h1 className="text-[20.8px] font-montserrat font-black uppercase text-cvsu-green-dark tracking-tight leading-none mt-1.5 whitespace-nowrap">
+                  Reading Room
+                </h1>
+              </div>
               <div className="flex gap-2">
                 <button className="p-2 bg-gray-100 rounded-full text-gray-600"><Bell size={20} /></button>
               </div>
@@ -124,13 +145,14 @@ const StudentDashboard = () => {
               </div>
 
               <PendingResearchFeed student={student}/>
+
+              <AnnouncementFeed />
             </div>
           )}
 
           {activeTab === "catalog" && <StudentBookCatalog />}
-          {activeTab === "history" && <MyBorrowingHistory />}
-          
-          {/* PROFILE TAB WITH LOGOUT AT THE BOTTOM */}
+          {activeTab === "history" && <MyBorrowingHistory studentId={student.student_id} />}
+          {activeTab === "settings" && <AccountSettings key="settings" />}
           {activeTab === "profile" && (
             <div className="space-y-6">
               <StudentProfile studentData={student} />
