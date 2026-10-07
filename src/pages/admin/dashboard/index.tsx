@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 // src\pages\admin\dashboard\index.tsx
 import { motion, AnimatePresence } from "framer-motion";
 import { MonitorXIcon, LogOutIcon } from "lucide-react";
