@@ -1,0 +1,10 @@
+<IfModule mod_rewrite.c>
+    # Turn on the Apache Rewrite Engine
+    RewriteEngine On
+    
+    # Base path for this subfolder layer route
+    RewriteBase /LMS/src/API/student/
+
+    # Intercept view-manuscript/FILENAME.pdf and map it silently to stream_manuscript.php?file=FILENAME.pdf
+    RewriteRule ^view-manuscript/([^/]+)$ stream_manuscript.php?file=$1 [L,QSA]
+</IfModule>

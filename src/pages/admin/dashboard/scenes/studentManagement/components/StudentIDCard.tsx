@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { QRCode } from "react-qrcode-logo";
 
 type Props = {

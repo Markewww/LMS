@@ -1,3 +1,5 @@
+ 
+// src\pages\admin\dashboard\components\DashboardStats\index.tsx
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { motion } from "framer-motion";
@@ -34,6 +36,7 @@ const DashboardStats = () => {
     const fetchDashboardStats = async () => {
       try {
         setLoading(true);
+        // FIXED: Restored functional template literal backticks for API communication
         const response = await axios.get(`${API_BASE_URL}/admin/get_dashboard_stats.php`);
         setStats(response.data);
       } catch (error) {
@@ -42,7 +45,6 @@ const DashboardStats = () => {
         setLoading(false);
       }
     };
-
     fetchDashboardStats();
   }, []);
 
@@ -56,33 +58,40 @@ const DashboardStats = () => {
     );
   }
 
+  const sharedCardStyles = "bg-white p-6 rounded-2xl border border-cvsu-green-base border-l-4 border-cvsu-green-base flex items-center gap-5 shadow-xs text-left select-none";
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+      
       {/* Card 1: Books Inventory */}
-      <motion.div custom={0} initial="hidden" animate="visible" variants={cardVariants} className="bg-gray-50/50 p-6 rounded-2xl border border-gray-100 flex items-center gap-5">
-        <div className="p-4 rounded-xl bg-amber-50 text-amber-600">
+      <motion.div custom={0} initial="hidden" animate="visible" variants={cardVariants} className={sharedCardStyles}>
+        <div className="p-4 rounded-xl bg-amber-50 text-amber-600 shrink-0">
           <BookOpenIcon size={24} />
         </div>
         <div>
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-wider font-montserrat">Total Books</p>
-          <h3 className="text-2xl font-black text-gray-800 mt-1">{stats.totalBooks.toLocaleString()}</h3>
+          <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider font-montserrat">Total Books</p>
+          <h3 className="text-2xl font-black text-gray-800 mt-0.5 font-montserrat tracking-tight">
+            {stats.totalBooks.toLocaleString()}
+          </h3>
         </div>
       </motion.div>
 
       {/* Card 2: Registered Students */}
-      <motion.div custom={1} initial="hidden" animate="visible" variants={cardVariants} className="bg-gray-50/50 p-6 rounded-2xl border border-gray-100 flex items-center gap-5">
-        <div className="p-4 rounded-xl bg-blue-50 text-blue-600">
+      <motion.div custom={1} initial="hidden" animate="visible" variants={cardVariants} className={sharedCardStyles}>
+        <div className="p-4 rounded-xl bg-blue-50 text-blue-600 shrink-0">
           <UserCheckIcon size={24} />
         </div>
         <div>
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-wider font-montserrat">Total Students</p>
-          <h3 className="text-2xl font-black text-gray-800 mt-1">{stats.totalStudents.toLocaleString()}</h3>
+          <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider font-montserrat">Total Students</p>
+          <h3 className="text-2xl font-black text-gray-800 mt-0.5 font-montserrat tracking-tight">
+            {stats.totalStudents.toLocaleString()}
+          </h3>
         </div>
       </motion.div>
 
       {/* Card 3: Live Active Visitors */}
-      <motion.div custom={2} initial="hidden" animate="visible" variants={cardVariants} className="bg-gray-50/50 p-6 rounded-2xl border border-gray-100 flex items-center gap-5 relative overflow-hidden">
-        <div className="p-4 rounded-xl bg-emerald-50 text-emerald-600 relative">
+      <motion.div custom={2} initial="hidden" animate="visible" variants={cardVariants} className={`${sharedCardStyles} relative overflow-hidden`}>
+        <div className="p-4 rounded-xl bg-emerald-50 text-emerald-600 relative shrink-0">
           <ActivityIcon size={24} />
           <span className="absolute top-3 right-3 flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -90,21 +99,26 @@ const DashboardStats = () => {
           </span>
         </div>
         <div>
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-wider font-montserrat">Active Visitors</p>
-          <h3 className="text-2xl font-black text-emerald-600 mt-1">{stats.activeVisitors.toLocaleString()}</h3>
+          <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider font-montserrat">Active Visitors</p>
+          <h3 className="text-2xl font-black text-emerald-600 mt-0.5 font-montserrat tracking-tight">
+            {stats.activeVisitors.toLocaleString()}
+          </h3>
         </div>
       </motion.div>
 
       {/* Card 4: Pending Reviews */}
-      <motion.div custom={3} initial="hidden" animate="visible" variants={cardVariants} className="bg-gray-50/50 p-6 rounded-2xl border border-gray-100 flex items-center gap-5">
-        <div className="p-4 rounded-xl bg-purple-50 text-purple-600">
+      <motion.div custom={3} initial="hidden" animate="visible" variants={cardVariants} className={sharedCardStyles}>
+        <div className="p-4 rounded-xl bg-purple-50 text-purple-600 shrink-0">
           <UsersIcon size={24} />
         </div>
         <div>
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-wider font-montserrat">Pending Reviews</p>
-          <h3 className="text-2xl font-black text-gray-800 mt-1">{stats.pendingResearch.toLocaleString()}</h3>
+          <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider font-montserrat">Pending Reviews</p>
+          <h3 className="text-2xl font-black text-gray-800 mt-0.5 font-montserrat tracking-tight">
+            {stats.pendingResearch.toLocaleString()}
+          </h3>
         </div>
       </motion.div>
+
     </div>
   );
 };

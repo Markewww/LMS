@@ -1,190 +1,137 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import axios from "axios";
+ 
+// src\pages\admin\dashboard\index.tsx
 import { motion, AnimatePresence } from "framer-motion";
-import { MonitorXIcon, 
-  LogOutIcon, 
-  UsersIcon, 
-  ChevronDownIcon,
- } from "lucide-react";
-import Sidebar from "@/pages/admin/scenes/sidebar";
+import { MonitorXIcon, LogOutIcon } from "lucide-react";
 
-// Import Scenes
+// Context & Navigation Sidebar
+import Sidebar from "@/pages/admin/scenes/sidebar";
+import { useAdminDashboard } from "./hooks/useAdminDashboard";
+
+// Sub-Scene Administrative Modules
 import AdminManagement from "@/pages/admin/dashboard/scenes/adminManagement";
 import StudentManagement from "@/pages/admin/dashboard/scenes/studentManagement";
-import AttendanceLog from "@/pages/admin/dashboard/scenes/activityLogs/attendance";
-import CirculationLog from "@/pages/admin/dashboard/scenes/activityLogs/circulation";
 import BookInventory from "@/pages/admin/dashboard/scenes/bookInventory";
 import ResearchApproval from "@/pages/admin/dashboard/scenes/researchApproval";
+import AccountSettings from "@/components/shared/AccountSettings";
+import AttendanceLog from "@/pages/admin/dashboard/scenes/activityLogs/attendance";
+import CirculationLog from "@/pages/admin/dashboard/scenes/activityLogs/circulation";
 
-// Dashboard Components
-import AttendanceGraph from "@/pages/admin/dashboard/components/attendanceGraph";
-import DashboardStats from "@/pages/admin/dashboard/components/DashboardStats";
+// Shared Dashboard Components & Injected Modular Tabs
+import DashboardAnalytics from "@/pages/admin/dashboard/components/DashboardAnalytics";
 import DashboardAnnouncements from "@/pages/admin/dashboard/components/DashboardAnnouncements";
 
-// API CONFIG FILE
-import { API_BASE_URL } from "@/API/APIConfig";
-
-interface Admin {
-  id: string;
-  type: "superadmin" | "admin";
-}
-
 const AdminDashboard = () => {
-  const navigate = useNavigate();
-  const [admin] = useState<Admin | null>(() => {
-    try {
-      const loggedInUser = localStorage.getItem("user");
-      if (!loggedInUser) return null;
-
-      const parsedUser = JSON.parse(loggedInUser) as Partial<Admin>;
-      if (parsedUser.type !== "superadmin" && parsedUser.type !== "admin") {
-        return null;
-      }
-
-      return {
-        id: parsedUser.id ?? "",
-        type: parsedUser.type as Admin["type"],
-      };
-    } catch {
-      return null;
-    }
-  });
-  const [activeTab, setActiveTab] = useState("dashboard");
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
-  const [showAttendanceGraph, setShowAttendanceGraph] = useState(false);
-
-  useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 1024);
-    window.addEventListener("resize", handleResize);
-
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  useEffect(() => {
-    if (!admin) {
-      navigate("/login");
-    }
-  }, [admin, navigate]);
-
-  const handleLogout = async () => {
-    try {
-      await axios.post(`${API_BASE_URL}/logout.php`);
-    } catch {
-      // Ignore logout request failure and continue with local cleanup.
-    } finally {
-      localStorage.removeItem("user");
-      navigate("/login", { replace: true });
-    }
-  };
+  const {
+    admin,
+    activeTab,
+    setActiveTab,
+    isMobile,
+    handleLogout,
+  } = useAdminDashboard();
 
   if (!admin) return null;
 
+  // --- CASE A: MOBILE ACCESS PROTECTION BARRIER ACCESS SHIELD ---
   if (isMobile) {
     return (
-      <div className="h-screen w-full flex flex-col items-center justify-center bg-white p-10 text-center font-dm">
-        <motion.div 
+      <div className="h-screen w-full flex flex-col items-center justify-center bg-white p-10 text-center font-dm select-none">
+        <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           className="max-w-xs"
         >
-          <div className="bg-red-50 p-6 rounded-full inline-block mb-6">
-            <MonitorXIcon size={48} className="text-red-500" />
+          <div className="bg-red-50 p-6 rounded-full inline-block mb-6 text-red-500">
+            <MonitorXIcon size={48} />
           </div>
           <h2 className="text-2xl font-montserrat font-black text-cvsu-green-dark uppercase leading-tight">
             Mobile Access Restricted
           </h2>
-          <p className="text-cvsu-gray text-sm mt-4 leading-relaxed">
-            The Admin Dashboard is not applicable for mobile screens. Please use a **Desktop** or **Laptop** to manage the system.
+          <p className="text-cvsu-gray text-sm mt-4 leading-relaxed font-medium">
+            The Admin Dashboard is not optimized for mobile screens. Please use a **Desktop** or **Laptop** workstation to manage the system.
           </p>
-          
-          <button 
+          <button
+            type="button"
             onClick={handleLogout}
-            className="mt-10 w-full flex items-center justify-center gap-2 bg-cvsu-green-base text-white py-4 rounded-2xl font-bold uppercase tracking-widest text-xs hover:bg-cvsu-green-dark transition-all"
+            className="mt-10 w-full flex items-center justify-center gap-2 bg-cvsu-green-base text-white py-4 rounded-2xl font-bold uppercase tracking-widest text-xs hover:bg-cvsu-green-dark transition-all shadow-md cursor-pointer group"
           >
-            <LogOutIcon size={18} /> Return to Login
+            <LogOutIcon size={18} className="group-hover:translate-x-0.5 transition-transform" />
+            Return to Login
           </button>
         </motion.div>
       </div>
     );
   }
 
+  // --- CASE B: STANDARD DESKTOP SCREEN VIEW ROUTER ---
   return (
-    <div className="flex min-h-screen bg-cvsu-bg font-dm">
-      <Sidebar 
-        activeTab={activeTab} 
-        setActiveTab={setActiveTab} 
-        handleLogout={handleLogout} 
-        userType={admin?.type}
+    <div className="flex min-h-screen bg-cvsu-bg font-dm text-left select-none">
+      <Sidebar
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        handleLogout={handleLogout}
+        userType={admin.type}
       />
-
-      <main className="ml-64 flex-1 p-8">
+      
+      <main className="ml-64 flex-1 p-8 min-w-0">
         <header className="mb-8">
-          <h1 className="text-3xl font-montserrat font-black text-cvsu-green-base uppercase">
+          <h1 className="text-3xl font-montserrat font-black text-cvsu-green-base uppercase tracking-tight">
             {activeTab.replace("-", " ")}
           </h1>
-          <p className="text-cvsu-gray italic text-sm">Welcome back, {admin.id}</p>
+          <p className="text-cvsu-gray italic text-sm font-medium mt-0.5">
+            Welcome back, admin signature session log: <span className="font-mono font-bold not-italic text-cvsu-green-dark">{admin.id}</span>
+          </p>
         </header>
 
-        <div className="bg-white rounded-2xl shadow-sm p-8 min-h-40">
-          {activeTab === "dashboard" && (
-            <div className="space-y-6">
-              <DashboardStats />
-               <div onClick={() => setShowAttendanceGraph(!showAttendanceGraph)} className="bg-white border-2 border-gray-50 p-6 rounded-2xl cursor-pointer hover:border-cvsu-green-base transition-all group flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="bg-cvsu-green-50 p-3 rounded-xl text-cvsu-green-base group-hover:bg-cvsu-green-base group-hover:text-white transition-colors">
-                      <UsersIcon size={24} />
-                    </div>
+        <div className="bg-white rounded-2xl shadow-sm p-8 min-h-40 border border-gray-100/50">
+          <AnimatePresence mode="wait">
+            
+            {/* SUB-TAB 1: UNLOCKED MODULARIZED ANALYTICS VIEW */}
+            {activeTab === "dashboard-analytics" && <DashboardAnalytics key="analytics-scene-tab" />}
 
-                    <div>
-                      <h3 className="font-montserrat font-black text-cvsu-green-dark uppercase">Attendance Analytics</h3>
-                      <p className="text-xs text-gray-500 italic">Click to {showAttendanceGraph ? 'hide' : 'view'} visitor statistics</p>
-                    </div>
-                  </div>
-                  <motion.div
-                  animate={{ rotate: showAttendanceGraph ? 180 : 0 }}
-                  className="text-gray-400"
-                >
-                  <ChevronDownIcon size={24} />
-                </motion.div>
-               </div>
-               <AnimatePresence>
-                {showAttendanceGraph && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.3, ease: "easeInOut" }}
-                    className="overflow-hidden"
-                  >
-                    <AttendanceGraph />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-              <DashboardAnnouncements currentAdminId={admin.id} />
-            </div>
-          )}
-          
-          {activeTab === "admin-management" && admin?.type === "superadmin" && (
-            <AdminManagement />
-          )}
-          {activeTab === "students" && (admin?.type === "admin" || admin?.type === "superadmin") && (
-            <StudentManagement />
-          )}
-          {activeTab === "books" && (admin?.type === "admin" || admin?.type === "superadmin") && (
-            <BookInventory />
-          )}
-          {activeTab === "research" && (admin?.type === "admin" || admin?.type === "superadmin") && (
-            <ResearchApproval />
-          )}
-          {activeTab === "logs" && (admin?.type === "admin" || admin?.type === "superadmin") && (
-            <div className="space-y-12">
-              <AttendanceLog />
-              <hr className="border-gray-100"/>
-              <CirculationLog />
-            </div>
+            {/* SUB-TAB 2: BULLETIN BOARD ANNOUNCEMENTS VIEW CONTAINER */}
+            {activeTab === "dashboard-bulletin" && (
+              <motion.div
+                key="bulletin-tab"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+              >
+                <DashboardAnnouncements currentAdminId={admin.id} />
+              </motion.div>
+            )}
 
-          )}
+            {/* CORE MODULE CONTROL VIEWPORT ROUTING SWITCH SYSTEM */}
+            {activeTab === "admin-management" && admin.type === "superadmin" && (
+              <AdminManagement key="admin-mgmt-scene" />
+            )}
+            
+            {activeTab === "students" && (
+              <StudentManagement key="student-mgmt-scene" />
+            )}
+            
+            {activeTab === "books" && (
+              <BookInventory key="book-inventory-scene" />
+            )}
+            
+            {activeTab === "research" && (
+              <ResearchApproval key="research-approval-scene" />
+            )}
+            
+            {activeTab === "logs-attendance" && (
+              <AttendanceLog key="attendance-logs-scene" />
+            )}
+            
+            {activeTab === "logs-circulation" && (
+              <CirculationLog key="circulation-logs-scene" />
+            )}
+            
+            {activeTab === "settings" && (
+              <div key="settings-scene" className="w-full max-w-xl text-left">
+                <AccountSettings />
+              </div>
+            )}
+
+          </AnimatePresence>
         </div>
       </main>
     </div>
