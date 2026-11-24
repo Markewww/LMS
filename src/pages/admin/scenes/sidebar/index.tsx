@@ -15,7 +15,8 @@ import {
   ChevronRightIcon,
   KeyRound,
   CalendarCheck,
-  RefreshCw
+  RefreshCw,
+  ShieldCheck,
 } from "lucide-react";
 
 type Props = {
@@ -39,12 +40,15 @@ const Sidebar = ({ activeTab, setActiveTab, handleLogout, userType }: Props) => 
 
   // Dynamically inject Superadmin privileges safely
   if (userType === "superadmin") {
-    menuItems.splice(0, 0, { id: "admin-management", label: "Admin Accounts", icon: UserPlusIcon });
+    menuItems.splice(0, 0, { id: "admin-management", label: "Staff Accounts", icon: UserPlusIcon });
   }
 
   // Active validation state checks for main parent highlight tracking rules
   const isDashboardActive = activeTab === "dashboard-analytics" || activeTab === "dashboard-bulletin";
-  const isLogsActive = activeTab === "logs-attendance" || activeTab === "logs-circulation";
+  const isLogsActive = 
+  activeTab === "logs-attendance" || 
+  activeTab === "logs-circulation" ||
+  activeTab === "logs-audit";
 
   return (
     <div className="h-screen w-64 bg-white border-r border-gray-200 flex flex-col fixed left-0 top-0 font-dm select-none z-40">
@@ -175,6 +179,22 @@ const Sidebar = ({ activeTab, setActiveTab, handleLogout, userType }: Props) => 
                 <RefreshCw size={16} />
                 Circulation Logs
               </button>
+
+              {/* Superadmin only: admin audit trail */}
+              {userType === "superadmin" && (
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("logs-audit")}
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg font-montserrat font-semibold text-xs transition-all cursor-pointer ${
+                    activeTab === "logs-audit"
+                      ? "bg-cvsu-green-base text-white shadow-sm shadow-cvsu-green-base/10"
+                      : "text-cvsu-gray hover:bg-gray-50 hover:text-cvsu-green-base"
+                  }`}
+                >
+                  <ShieldCheck size={16} />
+                  Audit Logs
+                </button>
+              )}
             </div>
           )}
         </div>

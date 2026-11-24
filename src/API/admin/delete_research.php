@@ -1,18 +1,9 @@
 <?php
-// 1. ALLOW CORS AND DEFINE JSON OUTPUT HEADERS
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: DELETE, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
-header("Content-Type: application/json; charset=UTF-8");
-
-// Handle browser preflight cross-origin safety checks automatically
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit();
-}
-
-// 2. INCLUDE YOUR DATABASE CONNECTION FILE
+// src/API/admin/delete_research.php
+// CORS headers and OPTIONS preflight are handled centrally in dbconfig.php
 require_once "../dbconfig.php";
+require_once "../require_admin.php";
+require_once "../activity_logger.php";
 
 if (!$conn) {
     http_response_code(500);
@@ -20,7 +11,9 @@ if (!$conn) {
     exit();
 }
 
-// Enforce request method constraints to look strictly for DELETE queries
+requireStaff($conn);
+
+// Enforce DELETE requests only
 if ($_SERVER['REQUEST_METHOD'] !== 'DELETE') {
     http_response_code(405);
     echo json_encode(["success" => false, "message" => "Method Not Allowed. Use DELETE requests."]);
@@ -28,8 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'DELETE') {
 }
 
 try {
-    // 3. CAPTURE AND VALIDATE INCOMING URL PARAMETER TARGET
-    // Expects URL formatting structure matching: ?uuid=XXXX-XXXX-XXXX
+    // 3. CAPTURE AND VALIDATE INCOMING URL PARAMETER (?uuid=XXXX-XXXX-XXXX)
     $uuid = isset($_GET['uuid']) ? trim($_GET['uuid']) : '';
 
     if (empty($uuid)) {
@@ -38,45 +30,47 @@ try {
         exit();
     }
 
-    // 4. LOOKUP ATTACHED PDF FILE PATHS FOR PHYSICAL STORAGE CLEANUP
-    $findQuery = "SELECT file_path FROM research_projects WHERE uuid = ?";
+    // 4. LOOK UP THE RECORD (also used as the audit snapshot) AND ITS PDF PATH
+    $findQuery = "SELECT code, title, type, program, year, authors, status, file_path
+                  FROM research_projects WHERE uuid = ?";
     $findStmt = $conn->prepare($findQuery);
     if (!$findStmt) {
         throw new Exception($conn->error);
     }
-    
     $findStmt->bind_param("s", $uuid);
     $findStmt->execute();
     $result = $findStmt->get_result();
-    
+    $old = null;
+
     if ($result && $row = $result->fetch_assoc()) {
+        $old = $row;
         $relativeFilePath = $row['file_path'];
-        
-        // If a file link snapshot exists, remove the asset from disk space arrays
+
+        // Remove the PDF from disk if one is attached
         if (!empty($relativeFilePath)) {
-            // Converts database paths ("src/assets/uploads/documents/...") 
-            // back into backend path steps ("../../assets/uploads/documents/...")
             $physicalPath = str_replace("src/", "../../", $relativeFilePath);
-            
             if (file_exists($physicalPath)) {
-                // Erases the physical PDF document file from your XAMPP local server storage
-                unlink($physicalPath); 
+                unlink($physicalPath);
             }
         }
     }
     $findStmt->close();
 
-    // 5. REMOVE THE LOG RECORD ROW FROM THE MYSQL TABLE
+    // 5. REMOVE THE ROW FROM THE TABLE
     $deleteSql = "DELETE FROM research_projects WHERE uuid = ?";
     $deleteStmt = $conn->prepare($deleteSql);
     if (!$deleteStmt) {
         throw new Exception($conn->error);
     }
-
     $deleteStmt->bind_param("s", $uuid);
 
     if ($deleteStmt->execute()) {
         if ($deleteStmt->affected_rows > 0) {
+            if ($old) {
+                $old['had_pdf'] = !empty($old['file_path']);
+                unset($old['file_path']);
+                logActivity($conn, 'research.delete', 'research_project', $old['code'] ?: $uuid, ['deleted' => $old]);
+            }
             http_response_code(200);
             echo json_encode([
                 "success" => true,
@@ -92,7 +86,6 @@ try {
     } else {
         throw new Exception($deleteStmt->error);
     }
-
     $deleteStmt->close();
 
 } catch (Exception $e) {

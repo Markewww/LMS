@@ -7,7 +7,6 @@ import {
   Trash2, CheckCircle, RotateCcw, FileText 
 } from "lucide-react";
 import { API_BASE_URL } from "@/API/APIConfig";
-import KioskToolbar from "./KioskToolbar";
 
 interface BorrowedAsset {
   asset_id: string;
@@ -148,16 +147,6 @@ const CirculationKiosk = () => {
     }
   };
 
-  // BRIDGED MANUAL OVERRIDE ROUTER (Used by KioskToolbar form submit)
-  const handleManualFormRoute = (manualTextString: string) => {
-    const fullyCleanedQR = manualTextString.replace(/[\n\r\t]/g, "").trim();
-    if (!currentStudent) {
-      executeStudentIdentification(fullyCleanedQR);
-    } else {
-      executeAssetCirculation(fullyCleanedQR);
-    }
-  };
-
   // Hardware KeyDown Scanner Laser Input Event Capturer
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
@@ -222,7 +211,7 @@ const CirculationKiosk = () => {
           <div className="text-center border-b border-gray-100 pb-6">
             <BookOpen size={52} className="mx-auto mb-3 text-cvsu-green-base" />
             <h1 className="text-3xl font-montserrat font-black uppercase tracking-tight text-cvsu-green-dark">
-              CEIT Library Circulation Gateway
+              CEIT Reading Room Circulation
             </h1>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-3 text-gray-700 font-bold text-xs font-mono">
               <div className="flex items-center gap-1.5"><Calendar size={14} /> {formatDate(currentTime)}</div>
@@ -231,27 +220,20 @@ const CirculationKiosk = () => {
             </div>
           </div>
 
-          {/* INTEGRATED MANUAL FORM CONTROL TOOLBAR OVERRIDE */}
-          <KioskToolbar 
-            currentStudent={currentStudent}
-            onManualSubmit={handleManualFormRoute}
-            onResetSession={resetKiosk}
-          />
-
           {/* SPLIT COLUMN INTERFACE LAYOUT TRACK GRID */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 text-left">
             
             {/* LEFT COLUMN PANEL: BORROWER PROFILE CONTAINER MATRIX */}
-            <div className="bg-cvsu-green-base text-white p-6 rounded-3xl shadow-inner min-h-[320px] flex flex-col justify-between relative overflow-hidden">
+            <div className="bg-cvsu-green-base text-white p-6 rounded-3xl shadow-inner min-h-80 flex-col justify-between relative overflow-hidden">
               <div>
-                                <p className="text-[10px] font-black uppercase opacity-60 tracking-widest mb-4">Verified Borrower Registry</p>
+                <p className="text-[10px] font-black uppercase opacity-60 tracking-widest mb-4">STUDENT</p>
                 {currentStudent ? (
                   <div className="space-y-4 animate-in fade-in zoom-in-95 duration-300">
                     <div>
                       <p className="text-3xl font-montserrat font-black uppercase leading-tight tracking-tight">
                         {currentStudent.name}
                       </p>
-                      <p className="text-sm opacity-80 mt-1 font-mono font-bold">STUDENT LOG NUMBER: {currentStudent.id}</p>
+                      <p className="text-sm opacity-80 mt-1 font-mono font-bold">STUDENT ID: {currentStudent.id}</p>
                     </div>
                     <span className="inline-block px-4 py-1.5 bg-white text-cvsu-green-base rounded-full text-xs font-black uppercase shadow-sm tracking-wider">
                       Account Status: ACTIVE
@@ -261,9 +243,9 @@ const CirculationKiosk = () => {
                   <div className="py-14 opacity-50 flex flex-col items-center text-center space-y-3">
                     <User size={56} className="animate-pulse" />
                     <div>
-                      <p className="text-xl font-bold">Awaiting Student Registry Token</p>
+                      <p className="text-xl font-bold">Waiting for Student ID QR Code</p>
                       <p className="text-xs opacity-70 mt-1 max-w-xs leading-normal">
-                        Scan the student's unique identity QR code card layout to fetch their ledger account histories.
+                        Scan the student ID QR code card layout.
                       </p>
                     </div>
                   </div>
@@ -276,15 +258,15 @@ const CirculationKiosk = () => {
                   onClick={resetKiosk}
                   className="mt-6 flex items-center justify-center gap-2 w-full py-3.5 bg-cvsu-green-dark/40 hover:bg-cvsu-green-dark text-white border border-white/10 rounded-xl text-xs font-bold uppercase tracking-widest transition-all shadow-md active:scale-98 cursor-pointer"
                 >
-                  <Trash2 size={14} /> Close Transaction / Flush Session
+                  <Trash2 size={14} /> Close Transaction
                 </button>
               )}
             </div>
 
             {/* RIGHT COLUMN PANEL: LEDGER LISTINGS AND TRANSACTION ALERT FEEDBACK */}
-            <div className="bg-gray-50 p-6 rounded-3xl border border-gray-100 min-h-[320px] flex flex-col justify-between font-dm">
+            <div className="bg-gray-50 p-6 rounded-3xl border border-gray-100 min-h-80 flex flex-col justify-between font-dm">
               <div className="w-full space-y-4 flex-1 flex flex-col">
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Active Ledger Holdings</p>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Student Borrowed History</p>
                 
                 {/* INTERACTIVE SERVER OPERATION TRANSACTIONS FEEDBACK CARDS */}
                 {lastAction && (
@@ -320,7 +302,7 @@ const CirculationKiosk = () => {
                       <p className="text-xs max-w-xs text-gray-400">Scan any catalog card tracking identifier tag to assign a new checkout item asset.</p>
                     </div>
                   ) : (
-                    <div className="space-y-2 overflow-y-auto max-h-[190px] pr-2 custom-scrollbar w-full">
+                    <div className="space-y-2 overflow-y-auto max-h-47.5-2 custom-scrollbar w-full">
                       {currentStudent.borrowedAssets.map((asset) => (
                         <div key={asset.asset_id} className="bg-white p-3.5 rounded-xl border border-gray-100 flex justify-between items-center shadow-xs hover:border-gray-200 transition-colors animate-in fade-in">
                           <div className="flex items-center gap-3">

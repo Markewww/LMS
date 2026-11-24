@@ -1,5 +1,15 @@
 import { useState } from "react";
-import { ClipboardListIcon, CheckCircleIcon, XCircleIcon, EyeIcon, FileTextIcon, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
+import {
+  ClipboardListIcon,
+  CheckCircleIcon,
+  Trash2Icon,
+  EyeIcon,
+  FileTextIcon,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+} from "lucide-react";
 import ConfirmationModal from "../../studentManagement/components/alerts/ConfirmationModal";
 
 interface ResearchProject {
@@ -18,20 +28,31 @@ interface ResearchProject {
   status: "pending" | "approved" | "rejected";
   submitted_by: string | null;
   created_at: string;
+  verification_code: string | null;
 }
 
 interface Props {
   submissions: ResearchProject[];
-  onUpdateStatus: (uuid: string, status: "approved" | "rejected") => void;
+  onUpdateStatus: (uuid: string, status: "approved") => void;
+  onDelete: (uuid: string) => void;
   onViewDetails: (research: ResearchProject) => void;
 }
 
-const ResearchTable = ({ submissions, onUpdateStatus, onViewDetails }: Props) => {
+const ResearchTable = ({
+  submissions,
+  onUpdateStatus,
+  onDelete,
+  onViewDetails,
+}: Props) => {
   // ─── PAGINATION STATE CONFIGURATIONS ───
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 10; // Splitting boundary constraint threshold
 
-  const [confirmData, setConfirmData] = useState<{ uuid: string; action: "approved" | "rejected"; isOpen: boolean }>({
+  const [confirmData, setConfirmData] = useState<{
+    uuid: string;
+    action: "approved" | "delete";
+    isOpen: boolean;
+  }>({
     uuid: "",
     action: "approved",
     isOpen: false,
@@ -40,19 +61,22 @@ const ResearchTable = ({ submissions, onUpdateStatus, onViewDetails }: Props) =>
   // Calculate local math range pointers
   const totalRows = submissions.length;
   const totalPages = Math.ceil(totalRows / rowsPerPage);
-  
   const startIndex = (currentPage - 1) * rowsPerPage;
   const endIndex = Math.min(startIndex + rowsPerPage, totalRows);
-  
+
   // Slice data collection to render only the targeted index frame subset rows
   const paginatedSubmissions = submissions.slice(startIndex, endIndex);
 
-  const handleOpenConfirm = (uuid: string, action: "approved" | "rejected") => {
+  const handleOpenConfirm = (uuid: string, action: "approved" | "delete") => {
     setConfirmData({ uuid, action, isOpen: true });
   };
 
   const handleConfirmAction = () => {
-    onUpdateStatus(confirmData.uuid, confirmData.action);
+    if (confirmData.action === "approved") {
+      onUpdateStatus(confirmData.uuid, "approved");
+    } else if (confirmData.action === "delete") {
+      onDelete(confirmData.uuid);
+    }
     setConfirmData({ ...confirmData, isOpen: false });
   };
 
@@ -69,15 +93,25 @@ const ResearchTable = ({ submissions, onUpdateStatus, onViewDetails }: Props) =>
         isOpen={confirmData.isOpen}
         onClose={() => setConfirmData({ ...confirmData, isOpen: false })}
         onConfirm={handleConfirmAction}
-        title={confirmData.action === "approved" ? "Approve Research" : "Reject Research"}
-        message={`Are you sure you want to ${confirmData.action} this research submission?`}
+        title={
+          confirmData.action === "approved"
+            ? "Approve Research"
+            : "Delete Research"
+        }
+        message={
+          confirmData.action === "approved"
+            ? "Are you sure you want to approve this research submission?"
+            : "Are you sure you want to permanently delete this research submission? This action cannot be undone."
+        }
       />
-      
+
       <div className="p-6 border-b border-gray-50 flex items-center gap-2">
         <ClipboardListIcon className="text-cvsu-green-base" size={24} />
-        <h3 className="font-montserrat font-black text-cvsu-green-dark uppercase">Research Submissions</h3>
+        <h3 className="font-montserrat font-black text-cvsu-green-dark uppercase">
+          Research Submissions
+        </h3>
       </div>
-      
+
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
@@ -94,11 +128,22 @@ const ResearchTable = ({ submissions, onUpdateStatus, onViewDetails }: Props) =>
               <tr key={res.uuid} className="hover:bg-gray-50 transition-colors">
                 <td className="p-4 max-w-xs">
                   <div className="flex items-start gap-2.5">
-                    <FileTextIcon size={16} className="text-gray-400 shrink-0 mt-1" />
+                    <FileTextIcon
+                      size={16}
+                      className="text-gray-400 shrink-0 mt-1"
+                    />
                     <div className="min-w-0">
-                      <p className="text-base font-bold text-gray-800 truncate" title={res.title}>
+                      <p
+                        className="text-base font-bold text-gray-800 truncate"
+                        title={res.title}
+                      >
                         {res.title}
                       </p>
+                      {res.status === "pending" && res.verification_code && (
+                        <span className="text-xs text-gray-400 font-semibold block mt-0.5 tracking-wide">
+                         {res.verification_code}
+                        </span>
+                      )}
                       {res.code ? (
                         <span className="text-xs text-gray-400 font-medium block mt-0.5 tracking-wide">
                           Code: {res.code}
@@ -120,10 +165,15 @@ const ResearchTable = ({ submissions, onUpdateStatus, onViewDetails }: Props) =>
                   {res.program} {res.year ? `(${res.year})` : ""}
                 </td>
                 <td className="p-4 text-center">
-                  <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${
-                    res.status === 'approved' ? 'bg-green-100 text-green-700' : 
-                    res.status === 'pending' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
-                  }`}>
+                  <span
+                    className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${
+                      res.status === "approved"
+                        ? "bg-green-100 text-green-700"
+                        : res.status === "pending"
+                        ? "bg-amber-100 text-amber-700"
+                        : "bg-red-100 text-red-700"
+                    }`}
+                  >
                     {res.status}
                   </span>
                 </td>
@@ -136,24 +186,22 @@ const ResearchTable = ({ submissions, onUpdateStatus, onViewDetails }: Props) =>
                     >
                       <EyeIcon size={20} />
                     </button>
-                    {res.status === 'pending' && (
-                      <>
-                        <button
-                          onClick={() => handleOpenConfirm(res.uuid, 'approved')}
-                          className="text-green-600 hover:scale-110 p-1 transition-transform cursor-pointer"
-                          title="Approve"
-                        >
-                          <CheckCircleIcon size={22} />
-                        </button>
-                        <button
-                          onClick={() => handleOpenConfirm(res.uuid, 'rejected')}
-                          className="text-red-500 hover:scale-110 p-1 transition-transform cursor-pointer"
-                          title="Reject"
-                        >
-                          <XCircleIcon size={22} />
-                        </button>
-                      </>
+                    {res.status === "pending" && (
+                      <button
+                        onClick={() => handleOpenConfirm(res.uuid, "approved")}
+                        className="text-green-600 hover:scale-110 p-1 transition-transform cursor-pointer"
+                        title="Approve"
+                      >
+                        <CheckCircleIcon size={22} />
+                      </button>
                     )}
+                    <button
+                      onClick={() => handleOpenConfirm(res.uuid, "delete")}
+                      className="text-red-500 hover:scale-110 p-1 transition-transform cursor-pointer"
+                      title="Delete"
+                    >
+                      <Trash2Icon size={20} />
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -163,7 +211,9 @@ const ResearchTable = ({ submissions, onUpdateStatus, onViewDetails }: Props) =>
       </div>
 
       {totalRows === 0 && (
-        <div className="p-20 text-center text-cvsu-gray italic">No research found.</div>
+        <div className="p-20 text-center text-cvsu-gray italic">
+          No research found.
+        </div>
       )}
 
       {/* ─── DYNAMIC PAGINATION CONTROLS FOOTER BIND ─── */}
@@ -171,8 +221,8 @@ const ResearchTable = ({ submissions, onUpdateStatus, onViewDetails }: Props) =>
         <div className="p-4 bg-gray-50 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4 select-none">
           {/* Metrics Range Label Display */}
           <div className="text-xs text-gray-500 font-medium">
-            Showing <span className="font-bold text-gray-700">{startIndex + 1}</span> to{" "}
-            <span className="font-bold text-gray-700">{endIndex}</span> of{" "}
+            Showing <span className="font-bold text-gray-700">{startIndex + 1}</span>{" "}
+            to <span className="font-bold text-gray-700">{endIndex}</span> of{" "}
             <span className="font-bold text-gray-700">{totalRows}</span> records
           </div>
 

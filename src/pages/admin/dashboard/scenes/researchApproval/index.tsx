@@ -34,6 +34,7 @@ interface ResearchProject {
   status: "pending" | "approved" | "rejected";
   submitted_by: string | null;
   created_at: string;
+  verification_code: string | null;
 }
 
 interface ResearchApprovalProps {
@@ -198,6 +199,7 @@ const ResearchApproval = ({ adminId = "SA-001" }: ResearchApprovalProps) => {
       <ResearchTable
         submissions={filteredData}
         onUpdateStatus={(uuid, status) => handleUpdateStatus(uuid, status)}
+        onDelete={handleDeleteResearch}
         onViewDetails={(research) => setSelectedResearch(research)}
       />
 

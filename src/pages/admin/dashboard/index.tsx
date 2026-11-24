@@ -15,6 +15,7 @@ import ResearchApproval from "@/pages/admin/dashboard/scenes/researchApproval";
 import AccountSettings from "@/components/shared/AccountSettings";
 import AttendanceLog from "@/pages/admin/dashboard/scenes/activityLogs/attendance";
 import CirculationLog from "@/pages/admin/dashboard/scenes/activityLogs/circulation";
+import AuditLogs from "@/pages/admin/dashboard/scenes/auditLogs";
 
 // Shared Dashboard Components & Injected Modular Tabs
 import DashboardAnalytics from "@/pages/admin/dashboard/components/DashboardAnalytics";
@@ -131,6 +132,9 @@ const AdminDashboard = () => {
               </div>
             )}
 
+            {activeTab === "logs-audit" && admin.type === "superadmin" && (
+              <AuditLogs key="audit-logs-scene" />
+            )}
           </AnimatePresence>
         </div>
       </main>

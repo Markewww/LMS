@@ -43,7 +43,7 @@ const AdminTable = ({ admins, setSelectedAdmin }: Props) => {
       <div className="p-6 border-b border-gray-50 flex items-center gap-2">
         <ShieldCheckIcon className="text-cvsu-green-base" size={24} />
         <h3 className="font-montserrat font-black text-cvsu-green-dark uppercase">
-          Administrators
+          Staffs
         </h3>
       </div>
       

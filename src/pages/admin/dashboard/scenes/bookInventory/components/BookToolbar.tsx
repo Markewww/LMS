@@ -1,4 +1,6 @@
-import { SearchIcon, FilterIcon, CalendarIcon, BookOpenIcon, HashIcon } from "lucide-react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { API_BASE_URL } from "@/API/APIConfig";
+import { SearchIcon, FilterIcon, CalendarIcon, BookOpenIcon, HashIcon, DownloadCloud } from "lucide-react";
 import { useState } from "react";
 
 type Props = {
@@ -13,6 +15,11 @@ const BookToolbar = ({ searchTerm, setSearchTerm, filters, setFilters }: Props) 
 
   const handleFilterChange = (key: string, value: string) => {
     setFilters({ ...filters, [key]: value });
+  };
+
+  const handleExportInventoryCSV = () => {
+    // Safely requests the binary payload stream to download the inventory file
+    window.open(`${API_BASE_URL}/admin/export_books_csv.php`, "_blank");
   };
 
   return (
@@ -54,6 +61,15 @@ const BookToolbar = ({ searchTerm, setSearchTerm, filters, setFilters }: Props) 
           >
             <FilterIcon size={16} />
             {showAdvanced ? "Hide Filters" : "More Filters"}
+          </button>
+
+          <button
+            type="button"
+            onClick={handleExportInventoryCSV}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-cvsu-green-base hover:bg-cvsu-green-dark text-white rounded-xl text-xs font-black font-montserrat uppercase tracking-widest shadow-sm hover:shadow-md transition-all cursor-pointer active:scale-95 group"
+          >
+            <DownloadCloud size={15} className="group-hover:translate-y-0.5 transition-transform" />
+            <span>Download Excel</span>
           </button>
         </div>
       </div>

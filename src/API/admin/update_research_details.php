@@ -1,24 +1,17 @@
 <?php
-// 1. ALLOW CORS AND DEFINE JSON OUTPUT HEADERS
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: POST, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
-header("Content-Type: application/json; charset=UTF-8");
-
-// Handle browser preflight cross-origin safety checks automatically
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit();
-}
-
-// 2. INCLUDE YOUR DATABASE CONNECTION FILE
+// src/API/admin/update_research_details.php
+// CORS headers and OPTIONS preflight are handled centrally in dbconfig.php
 require_once "../dbconfig.php";
+require_once "../require_admin.php";
+require_once "../activity_logger.php";
 
 if (!$conn) {
     http_response_code(500);
     echo json_encode(["success" => false, "message" => "Database Connection Failure"]);
     exit();
 }
+
+requireStaff($conn);
 
 // Enforce request method constraints
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -28,11 +21,10 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 try {
-    // 3. READ AND DECODE THE INCOMING JSON PAYLOAD RAW DATA
+    // 3. READ AND DECODE THE INCOMING JSON PAYLOAD
     $rawInput = file_get_contents("php://input");
     $data = json_decode($rawInput, true);
 
-    // Validate absolute required parameters before running updates
     if (empty($data['uuid']) || empty($data['title'])) {
         http_response_code(400);
         echo json_encode(["success" => false, "message" => "Research UUID and Project Title are required fields."]);
@@ -43,20 +35,18 @@ try {
     $uuid = trim($data['uuid']);
     $title = trim($data['title']);
     $type = isset($data['type']) ? trim($data['type']) : 'Thesis';
-    
-    // Explicitly handle empty string mappings converting back to safe database NULL row markers
+
+    // Empty strings become NULL
     $code = isset($data['code']) && trim($data['code']) !== '' ? trim($data['code']) : null;
     $program = isset($data['program']) && trim($data['program']) !== '' ? trim($data['program']) : null;
     $year = isset($data['year']) && trim($data['year']) !== '' ? (int)$data['year'] : null;
     $adviser = isset($data['adviser']) && trim($data['adviser']) !== '' ? trim($data['adviser']) : null;
     $technical_critic = isset($data['technical_critic']) && trim($data['technical_critic']) !== '' ? trim($data['technical_critic']) : null;
     $abstract = isset($data['abstract']) && trim($data['abstract']) !== '' ? trim($data['abstract']) : null;
-    
-    // Formatted comma-separated string outputs generated straight out from frontend input micro-chips
     $authors = isset($data['authors']) && trim($data['authors']) !== '' ? trim($data['authors']) : null;
     $keywords = isset($data['keywords']) && trim($data['keywords']) !== '' ? trim($data['keywords']) : null;
 
-    // Check for duplicate custom project call codes across other rows to prevent constraint failures
+    // Check for duplicate project call codes across other rows
     if ($code !== null) {
         $checkQuery = "SELECT uuid FROM research_projects WHERE code = ? AND uuid != ?";
         $checkStmt = $conn->prepare($checkQuery);
@@ -71,26 +61,34 @@ try {
         $checkStmt->close();
     }
 
-    // 5. SECURE INJECTION PROTECTION PREPARED SQL PARAMETER UPDATE STATEMENT
-    $updateSql = "UPDATE research_projects SET 
-                    title = ?, 
-                    type = ?, 
-                    code = ?, 
-                    program = ?, 
-                    year = ?, 
-                    adviser = ?, 
-                    technical_critic = ?, 
-                    abstract = ?, 
-                    authors = ?, 
-                    keywords = ? 
-                  WHERE uuid = ?";
+    // Snapshot the record BEFORE it changes (for the audit log)
+    $snap = $conn->prepare("SELECT code, title, type, program, year, adviser, technical_critic, abstract, authors, keywords
+                            FROM research_projects WHERE uuid = ?");
+    $snap->bind_param("s", $uuid);
+    $snap->execute();
+    $before = $snap->get_result()->fetch_assoc() ?: [];
+    $snap->close();
+
+    // 5. PREPARED UPDATE
+    $updateSql = "UPDATE research_projects SET
+                title = ?,
+                type = ?,
+                code = ?,
+                program = ?,
+                year = ?,
+                adviser = ?,
+                technical_critic = ?,
+                abstract = ?,
+                authors = ?,
+                keywords = ?
+            WHERE uuid = ?";
 
     $stmt = $conn->prepare($updateSql);
     if (!$stmt) {
         throw new Exception($conn->error);
     }
 
-    // "ssssissssss" translates parameter shapes safely: 10 structural string maps ('s') and 1 explicit integer tracker ('i') for the publication year
+    // 10 strings + 1 integer (year)
     $stmt->bind_param(
         "ssssissssss",
         $title,
@@ -107,9 +105,22 @@ try {
     );
 
     if ($stmt->execute()) {
+        logChange($conn, 'research.edit', 'research_project', $before['code'] ?? $uuid, $before, [
+            'code'             => $code,
+            'title'            => $title,
+            'type'             => $type,
+            'program'          => $program,
+            'year'             => $year,
+            'adviser'          => $adviser,
+            'technical_critic' => $technical_critic,
+            'abstract'         => $abstract,
+            'authors'          => $authors,
+            'keywords'         => $keywords,
+        ], ['title' => $before['title'] ?? $title]);
+
         http_response_code(200);
         echo json_encode([
-            "success" => true, 
+            "success" => true,
             "message" => "Research project document entry records modified successfully."
         ]);
     } else {
@@ -121,8 +132,8 @@ try {
 } catch (Exception $e) {
     http_response_code(500);
     echo json_encode([
-        "success" => false, 
-        "message" => "Update operations failure.", 
+        "success" => false,
+        "message" => "Update operations failure.",
         "error" => $e->getMessage()
     ]);
 }

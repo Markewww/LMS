@@ -3,9 +3,14 @@ import {
   Calendar, 
   ArrowUpDown, 
   X,
-  ExternalLink
+  ExternalLink,
+  DownloadCloud,
+  ChevronDown,
+  BookOpen,
+  FlaskConical
 } from "lucide-react";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { API_BASE_URL } from "@/API/APIConfig";
 
 type Props = {
   searchTerm: string;
@@ -50,6 +55,51 @@ const CirculationToolbar = ({
     }
   };
 
+
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
+  const exportWrapperRef = useRef<HTMLDivElement>(null);
+  const exportBtnRef = useRef<HTMLButtonElement>(null);
+  
+  const toggleExportMenu = () => {
+    if (exportBtnRef.current) {
+      const rect = exportBtnRef.current.getBoundingClientRect();
+      const menuWidth = 176; // matches w-44
+      setMenuPos({
+        top: rect.bottom + 8,
+        left: Math.max(8, rect.right - menuWidth), // right-align under the button
+      });
+    }
+    setShowExportMenu((prev) => !prev);
+  };
+  
+  const handleExport = (type: "books" | "research") => {
+    window.open(`${API_BASE_URL}/admin/export_circulation_logs.php?type=${type}`, "_blank");
+    setShowExportMenu(false);
+  };
+  
+  // Close the menu when clicking outside, scrolling, or resizing
+  useEffect(() => {
+    if (!showExportMenu) return;
+  
+    const handleClickOutside = (e: MouseEvent) => {
+      if (exportWrapperRef.current && !exportWrapperRef.current.contains(e.target as Node)) {
+        setShowExportMenu(false);
+      }
+    };
+    const close = () => setShowExportMenu(false);
+  
+    document.addEventListener("mousedown", handleClickOutside);
+    window.addEventListener("resize", close);
+    window.addEventListener("scroll", close, true);
+  
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener("resize", close);
+      window.removeEventListener("scroll", close, true);
+    };
+  }, [showExportMenu]);
+  
   return (
     <div className="flex items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-gray-100 shadow-sm mb-6 overflow-x-auto no-scrollbar">
       <div className="flex items-center gap-4 flex-1 min-w-0">
@@ -102,6 +152,47 @@ const CirculationToolbar = ({
           <ArrowUpDown size={14} />
           Sort: {sortOrder === "asc" ? "Oldest" : "Newest"}
         </button>
+
+        {/* Excel Export: click to reveal Books / Research */}
+        <div ref={exportWrapperRef} className="relative">
+          <button
+            ref={exportBtnRef}
+            type="button"
+            onClick={toggleExportMenu}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-cvsu-green-base hover:bg-cvsu-green-dark text-white rounded-xl text-xs font-black font-montserrat uppercase tracking-widest shadow-sm hover:shadow-md transition-all cursor-pointer active:scale-95 group"
+          >
+            <DownloadCloud size={15} className="group-hover:translate-y-0.5 transition-transform" />
+            <span>Excel</span>
+            <ChevronDown
+              size={14}
+              className={`transition-transform ${showExportMenu ? "rotate-180" : ""}`}
+            />
+          </button>
+
+          {showExportMenu && (
+            <div
+              style={{ top: menuPos.top, left: menuPos.left }}
+              className="fixed z-50 w-44 bg-white border border-gray-100 rounded-xl shadow-lg overflow-hidden animate-in fade-in slide-in-from-top-2"
+            >
+              <button
+                type="button"
+                onClick={() => handleExport("books")}
+                className="w-full flex items-center gap-2 px-4 py-3 text-xs font-bold uppercase tracking-wider text-cvsu-green-dark hover:bg-cvsu-green-50 transition-colors text-left"
+              >
+                <BookOpen size={14} />
+                Books
+              </button>
+              <button
+                type="button"
+                onClick={() => handleExport("research")}
+                className="w-full flex items-center gap-2 px-4 py-3 text-xs font-bold uppercase tracking-wider text-cvsu-green-dark hover:bg-cvsu-green-50 transition-colors text-left border-t border-gray-50"
+              >
+                <FlaskConical size={14} />
+                Research
+              </button>
+            </div>
+          )}
+        </div>
 
         {/* Reset Button */}
         <button

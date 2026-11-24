@@ -1,5 +1,9 @@
 <?php
+// src/API/admin/add_admin.php  (superadmin only)
 require_once "../dbconfig.php";
+require_once "../require_admin.php";
+require_once "../activity_logger.php";
+requireSuperadmin($conn);
 
 $data = json_decode(file_get_contents("php://input"), true);
 
@@ -28,8 +32,15 @@ try {
 
     // If both successful, commit
     $conn->commit();
-    echo json_encode(["success" => true, "message" => "Admin created successfully"]);
 
+    // Never log the password
+    logActivity($conn, 'admin.create', 'accounts', $user_id, [
+        'name'           => trim("$first_name $middle_name $last_name $suffix"),
+        'email'          => $email,
+        'contact_number' => $contact,
+    ]);
+
+    echo json_encode(["success" => true, "message" => "Admin created successfully"]);
 } catch (Exception $e) {
     // If any fails, undo everything
     $conn->rollback();

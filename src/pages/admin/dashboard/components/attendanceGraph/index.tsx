@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 // src\pages\admin\dashboard\components\attendanceGraph\index.tsx
 import { useEffect, useState, useCallback, useMemo } from "react";
 import axios from "axios";
