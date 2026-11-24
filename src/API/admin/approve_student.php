@@ -1,5 +1,9 @@
 <?php
+// src/API/admin/approve_student.php
 require_once "../dbconfig.php";
+require_once "../require_admin.php";
+require_once "../activity_logger.php";
+requireStaff($conn);
 
 $data = json_decode(file_get_contents("php://input"), true);
 
@@ -28,12 +32,11 @@ try {
 
     if ($student_info) {
         // Format: ID|LastName|FirstName|Course|Timestamp
-        // This format is easy for your 2D scanner to parse
-        $qr_string = "ID:" . $student_id . 
-                     "|L:" . $student_info['last_name'] . 
-                     "|F:" . $student_info['first_name'] . 
-                     "|C:" . $student_info['course'] . 
-                     "|TS:" . date("Y-m-d H:i:s");
+        $qr_string = "ID:" . $student_id .
+            "|L:" . $student_info['last_name'] .
+            "|F:" . $student_info['first_name'] .
+            "|C:" . $student_info['course'] .
+            "|TS:" . date("Y-m-d H:i:s");
 
         // 3. Save the generated QR string to the students table
         $stmt3 = $conn->prepare("UPDATE students SET qr_data = ? WHERE student_id = ?");
@@ -42,8 +45,14 @@ try {
     }
 
     $conn->commit();
-    echo json_encode(["success" => true, "message" => "Student approved and QR ID generated!"]);
 
+    logActivity($conn, 'student.approve', 'students', $student_id, [
+        'name'   => $student_info ? trim($student_info['first_name'] . ' ' . $student_info['last_name']) : null,
+        'course' => $student_info['course'] ?? null,
+        'status' => $new_status,
+    ]);
+
+    echo json_encode(["success" => true, "message" => "Student approved and QR ID generated!"]);
 } catch (Exception $e) {
     $conn->rollback();
     echo json_encode(["success" => false, "message" => "Error: " . $e->getMessage()]);

@@ -1,18 +1,9 @@
 <?php
-// 1. ALLOW CORS AND DEFINE JSON OUTPUT HEADERS
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: POST, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
-header("Content-Type: application/json; charset=UTF-8");
-
-// Handle browser preflight requests automatically
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit();
-}
-
-// 2. INCLUDE YOUR DATABASE CONNECTION FILE
+// src/API/admin/upload_legacy_research.php
+// CORS headers and OPTIONS preflight are handled centrally in dbconfig.php
 require_once "../dbconfig.php";
+require_once "../require_admin.php";
+require_once "../activity_logger.php";
 
 if (!$conn) {
     http_response_code(500);
@@ -20,7 +11,8 @@ if (!$conn) {
     exit();
 }
 
-// Enforce incoming request format rules
+requireStaff($conn);
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     echo json_encode(["success" => false, "message" => "Method Not Allowed. Use POST requests."]);
@@ -28,12 +20,12 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 try {
-    // 3. CAPTURE AND VALIDATE INCOMING FORM TEXTUAL METADATA
+    // 3. CAPTURE AND VALIDATE INCOMING FORM METADATA
     $title = isset($_POST['title']) ? trim($_POST['title']) : '';
     $type = isset($_POST['type']) ? trim($_POST['type']) : 'Thesis';
     $code = isset($_POST['code']) && trim($_POST['code']) !== '' ? trim($_POST['code']) : null;
     $program = isset($_POST['program']) && trim($_POST['program']) !== '' ? trim($_POST['program']) : null;
-    $year = isset($_POST['year']) && trim($_POST['year']) !== '' ? (int)$_POST['year'] : null; // Added year capture
+    $year = isset($_POST['year']) && trim($_POST['year']) !== '' ? (int)$_POST['year'] : null;
     $authors = isset($_POST['authors']) && trim($_POST['authors']) !== '' ? trim($_POST['authors']) : null;
     $adviser = isset($_POST['adviser']) && trim($_POST['adviser']) !== '' ? trim($_POST['adviser']) : null;
     $technical_critic = isset($_POST['technical_critic']) && trim($_POST['technical_critic']) !== '' ? trim($_POST['technical_critic']) : null;
@@ -62,8 +54,7 @@ try {
         $checkStmt->close();
     }
 
-    // 4. GENERATE SECURE ARCHIVAL UNIQUE IDENTIFIER
-    // Generate UUIDv4 compliant random tracking key string
+    // 4. GENERATE UNIQUE IDENTIFIER (UUIDv4 compliant)
     $uuid = sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
         mt_rand(0, 0xffff), mt_rand(0, 0xffff),
         mt_rand(0, 0xffff),
@@ -71,12 +62,12 @@ try {
         mt_rand(0, 0x3fff) | 0x8000,
         mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
     );
-    
-    // Status defaults to 'approved' automatically since it's verified historical data entries
-    $status = 'approved'; 
+
+    // Historical entries are approved automatically
+    $status = 'approved';
     $db_file_path = null;
 
-    // 5. OPTIONAL PDF DOCUMENT PROCESSING LAYER
+    // 5. OPTIONAL PDF DOCUMENT PROCESSING
     if (isset($_FILES['pdf_file']) && $_FILES['pdf_file']['error'] === UPLOAD_ERR_OK) {
         $fileTmpPath = $_FILES['pdf_file']['tmp_name'];
         $fileName = $_FILES['pdf_file']['name'];
@@ -88,13 +79,11 @@ try {
             exit();
         }
 
-        // Target target upload assets path tracking tree root
         $uploadTargetDir = '../../assets/uploads/documents/research/';
         if (!is_dir($uploadTargetDir)) {
-            mkdir($uploadTargetDir, 0755, true); 
+            mkdir($uploadTargetDir, 0755, true);
         }
 
-        // Compute localized filename string configuration to avoid collision conflicts
         $newFileName = $uuid . '.' . $fileExtension;
         $dest_path = $uploadTargetDir . $newFileName;
 
@@ -105,32 +94,30 @@ try {
         }
     }
 
-    // 6. SAFE INJECTION PROTECTION MANUSCRIPT REGISTRATION PREPARATION
-    // REMOVED: verification_code has been detached from both the columns and placeholders lists
+    // 6. INSERT
     $insertQuery = "INSERT INTO research_projects (
-                        uuid, 
-                        code, 
-                        title, 
-                        type, 
-                        program, 
-                        year,
-                        authors, 
-                        adviser, 
-                        technical_critic, 
-                        abstract, 
-                        keywords, 
-                        file_path, 
-                        status, 
-                        submitted_by
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                uuid,
+                code,
+                title,
+                type,
+                program,
+                year,
+                authors,
+                adviser,
+                technical_critic,
+                abstract,
+                keywords,
+                file_path,
+                status,
+                submitted_by
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
     $stmt = $conn->prepare($insertQuery);
     if (!$stmt) {
         throw new Exception($conn->error);
     }
 
-    // Bind parameter maps cleanly using native mysqli layout strings
-    // "sssssissssssss" matches 14 columns: 13 strings ('s') and 1 integer ('i') for the year field
+    // 14 columns: 13 strings + 1 integer (year)
     $stmt->bind_param(
         "sssssissssssss",
         $uuid,
@@ -150,6 +137,16 @@ try {
     );
 
     if ($stmt->execute()) {
+        logActivity($conn, 'research.upload', 'research_project', $code ?: $uuid, [
+            'title'   => $title,
+            'type'    => $type,
+            'program' => $program,
+            'year'    => $year,
+            'authors' => $authors,
+            'legacy'  => true,
+            'has_pdf' => $db_file_path !== null,
+        ]);
+
         http_response_code(201);
         echo json_encode([
             "success" => true,
@@ -159,7 +156,7 @@ try {
     } else {
         throw new Exception($stmt->error);
     }
-    
+
     $stmt->close();
 
 } catch (Exception $e) {

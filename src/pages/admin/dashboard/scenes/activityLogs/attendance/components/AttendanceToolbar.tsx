@@ -3,8 +3,10 @@ import {
   Calendar, 
   ArrowUpDown, 
   X, 
-  ExternalLink } from "lucide-react";
+  ExternalLink, 
+  DownloadCloud} from "lucide-react";
 import { useRef } from "react";
+import { API_BASE_URL } from "@/API/APIConfig";
 
 type Props = {
   searchTerm: string;
@@ -55,6 +57,11 @@ const AttendanceToolbar = ({
     if (dateInputRef.current) {
       dateInputRef.current.showPicker(); // Modern browser method
     }
+  };
+
+  const handleExportAttendanceXLS = () => {
+    // Safely requests the binary payload stream to download the attendance file
+    window.open(`${API_BASE_URL}/admin/export_attendance_logs.php`, "_blank");
   };
 
   return (
@@ -111,12 +118,22 @@ const AttendanceToolbar = ({
         </button>
 
         <button
+          type="button"
+          onClick={handleExportAttendanceXLS}
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-cvsu-green-base hover:bg-cvsu-green-dark text-white rounded-xl text-xs font-black font-montserrat uppercase tracking-widest shadow-sm hover:shadow-md transition-all cursor-pointer active:scale-95 group"
+        >
+          <DownloadCloud size={15} className="group-hover:translate-y-0.5 transition-transform" />
+          <span>Excel</span>
+        </button>
+        
+        <button
           onClick={resetToToday}
           className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
           title="Reset to Today"
         >
           <X size={18} />
         </button>
+
       </div>
     </div>
   );

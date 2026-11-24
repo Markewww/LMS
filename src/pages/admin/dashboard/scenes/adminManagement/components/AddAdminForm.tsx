@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { UserPlusIcon } from "lucide-react";
 import { useForm } from "react-hook-form";
 
@@ -22,7 +23,7 @@ const AddAdminForm = ({ onSubmit }: Props) => {
       <div className="flex items-center gap-2 mb-6">
         <UserPlusIcon className="text-cvsu-green-base" size={24} />
         <h3 className="font-montserrat font-black text-cvsu-green-dark uppercase">
-          Add New Administrator
+          Add New Staff
         </h3>
       </div>
 
@@ -137,7 +138,7 @@ const AddAdminForm = ({ onSubmit }: Props) => {
 
         <div className="md:col-span-4 flex items-end pt-4">
           <button type="submit" className="ceit-button w-full uppercase">
-            Register Admin Account
+            Register Staff Account
           </button>
         </div>
       </form>
