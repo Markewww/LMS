@@ -38,27 +38,34 @@ const ResearchLabel = ({ research }: Props) => {
       </div>
 
       {/* Visual Identity Grid */}
-      <div className="grid grid-cols-5 gap-3 items-center border-b border-gray-100 pb-3 mb-3">
-        {/* Left Side: Mobile Responsive QR Wrapper */}
-        <div className="col-span-2 bg-gray-50/50 p-2 rounded-lg border border-gray-100 flex justify-center items-center">
-          <QRCode 
-            value={research.code} 
-            size={90}
-            style={{ height: "auto", maxWidth: "100%", width: "100%" }}
+      <div className="flex flex-col items-center gap-3 border-b border-gray-100 pb-3 mb-3">
+        {/* QR Code (top) */}
+        <div className="bg-gray-50/50 p-2 rounded-lg border border-gray-100 flex justify-center items-center">
+          <QRCode
+            value={research.code}
+            logoImage="/src/images/cvsu-logo.png"
+            qrStyle="squares"
+            eyeRadius={0}
+            fgColor="#000000"
+            size={500}
+            ecLevel="H"
+            style={{
+              width: "160px",
+              height: "160px",
+              imageRendering: "pixelated",
+            }}
           />
         </div>
 
-        {/* Right Side: Hardware Barcode Wrapper */}
-        <div className="col-span-3 flex flex-col items-center justify-center text-center">
-          <div className="max-w-full overflow-hidden scale-95 origin-center">
-            <Barcode 
-              value={research.code} 
-              height={38} 
-              width={1.2} 
-              fontSize={10}
-              margin={2}
-            />
-          </div>
+        {/* Barcode (bottom) */}
+        <div className="w-full flex justify-center overflow-hidden">
+          <Barcode
+            value={research.code}
+            height={35}
+            width={1}
+            fontSize={12}
+            margin={1}
+          />
         </div>
       </div>
 

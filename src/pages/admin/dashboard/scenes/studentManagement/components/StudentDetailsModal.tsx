@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { XIcon, DownloadIcon, PrinterIcon, SaveIcon } from "lucide-react";

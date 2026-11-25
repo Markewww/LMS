@@ -1,7 +1,16 @@
 import { useState } from "react";
 // Icons
-import { UsersIcon, CheckCircleIcon, EyeIcon, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
-// Components 
+import {
+  UsersIcon,
+  CheckCircleIcon,
+  EyeIcon,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  BadgeCheckIcon,
+} from "lucide-react";
+// Components
 import ConfirmationModal from "./alerts/ConfirmationModal";
 
 interface StudentRecord {
@@ -11,6 +20,7 @@ interface StudentRecord {
   suffix?: string | null;
   course: string;
   account_status: "active" | "pending" | "inactive";
+  research_badge?: string | null;
 }
 
 type Props = {
@@ -32,10 +42,9 @@ const StudentTable = ({ students, onUpdateStatus, onViewDetails }: Props) => {
   // Calculate local page boundary math configurations
   const totalRows = students.length;
   const totalPages = Math.ceil(totalRows / rowsPerPage);
-  
   const startIndex = (currentPage - 1) * rowsPerPage;
   const endIndex = Math.min(startIndex + rowsPerPage, totalRows);
-  
+
   // Slice row array to only map out the targeted active index data chunk
   const paginatedStudents = students.slice(startIndex, endIndex);
 
@@ -44,7 +53,7 @@ const StudentTable = ({ students, onUpdateStatus, onViewDetails }: Props) => {
   };
 
   const handleConfirmAction = () => {
-    onUpdateStatus(confirmData.id, 'active');
+    onUpdateStatus(confirmData.id, "active");
     setConfirmData({ id: "", isOpen: false });
   };
 
@@ -64,12 +73,14 @@ const StudentTable = ({ students, onUpdateStatus, onViewDetails }: Props) => {
         title="Approve Student"
         message="Are you sure you want to approve this student's account?"
       />
-      
+
       <div className="p-6 border-b border-gray-50 flex items-center gap-2">
         <UsersIcon className="text-cvsu-green-base" size={24} />
-        <h3 className="font-montserrat font-black text-cvsu-green-dark uppercase">Student Masterlist</h3>
+        <h3 className="font-montserrat font-black text-cvsu-green-dark uppercase">
+          Student Masterlist
+        </h3>
       </div>
-      
+
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
@@ -86,18 +97,36 @@ const StudentTable = ({ students, onUpdateStatus, onViewDetails }: Props) => {
               <tr key={student.student_id} className="hover:bg-gray-50 transition-colors">
                 <td className="p-4 font-bold text-gray-700">{student.student_id}</td>
                 <td className="p-4 text-gray-600">
-                  {`${student.last_name}, ${student.first_name} ${student.suffix || ""}`}
+                  <div>
+                    <p className="font-medium text-gray-800">
+                      {`${student.last_name}, ${student.first_name} ${student.suffix || ""}`}
+                    </p>
+                    {student.research_badge === "verified" ? (
+                      <span className="inline-flex items-center gap-1 text-[11px] text-green-700 font-bold mt-0.5">
+                        <BadgeCheckIcon size={13} className="text-green-600" />
+                        Verified
+                      </span>
+                    ) : student.research_badge ? (
+                      <span className="text-xs text-gray-400 font-semibold block mt-0.5 tracking-wide">
+                        {student.research_badge}
+                      </span>
+                    ) : null}
+                  </div>
                 </td>
                 <td className="p-4 text-gray-600">{student.course}</td>
                 <td className="p-4 text-center">
-                  <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${
-                    student.account_status === 'active' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
-                  }`}>
+                  <span
+                    className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${
+                      student.account_status === "active"
+                        ? "bg-green-100 text-green-700"
+                        : "bg-yellow-100 text-yellow-700"
+                    }`}
+                  >
                     {student.account_status}
                   </span>
                 </td>
                 <td className="p-4 flex items-center justify-center">
-                  {student.account_status === 'pending' ? (
+                  {student.account_status === "pending" ? (
                     <button
                       onClick={() => handleOpenConfirm(student.student_id)}
                       className="text-green-600 hover:scale-110 p-1 transition-transform cursor-pointer"
@@ -145,7 +174,6 @@ const StudentTable = ({ students, onUpdateStatus, onViewDetails }: Props) => {
             >
               <ChevronsLeft size={14} />
             </button>
-
             <button
               onClick={() => changePage(currentPage - 1)}
               disabled={currentPage === 1}
@@ -167,7 +195,6 @@ const StudentTable = ({ students, onUpdateStatus, onViewDetails }: Props) => {
             >
               <ChevronRight size={14} />
             </button>
-
             <button
               onClick={() => changePage(totalPages)}
               disabled={currentPage === totalPages}

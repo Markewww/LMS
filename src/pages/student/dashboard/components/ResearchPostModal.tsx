@@ -15,6 +15,7 @@ import {
     BookOpen, 
     AlertCircle,
     Loader2,
+    ImagePlus,
 } from 'lucide-react';
 
 // API Config
@@ -27,6 +28,8 @@ const ResearchPostModal = ({ isOpen, onClose, student }: any) => {
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [allStudents, setAllStudents] = useState<any[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
+  const [receiptError, setReceiptError] = useState('');
 
   const [formData, setFormData] = useState({
     title: '',
@@ -36,10 +39,11 @@ const ResearchPostModal = ({ isOpen, onClose, student }: any) => {
     adviser: '',
     technicalCritic: '',
     type: '',
-    file: null as File | null
+    file: null as File | null,
+    receipt: null as File | null,
   });
 
-  const isFormValid = formData.title && formData.abstract && formData.type && formData.file;
+  const isFormValid = formData.title && formData.abstract && formData.type && formData.file && formData.receipt;
 
   useEffect(() => {
     if (isOpen) {
@@ -116,9 +120,41 @@ const ResearchPostModal = ({ isOpen, onClose, student }: any) => {
     });
   };
 
+  useEffect(() => {
+    if (!formData.receipt) {
+      setReceiptPreview(null);
+      return;
+    }
+    const url = URL.createObjectURL(formData.receipt);
+    setReceiptPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [formData.receipt]);
+
+  const handleReceiptChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const picked = e.target.files?.[0] || null;
+    setReceiptError('');
+    if (!picked) {
+      setFormData({ ...formData, receipt: null });
+      return;
+    }
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(picked.type)) {
+      setReceiptError('Please upload a JPG, PNG or WEBP image.');
+      e.target.value = '';
+      return;
+    }
+    if (picked.size > 5 * 1024 * 1024) {
+      setReceiptError('Image must be 5MB or smaller.');
+      e.target.value = '';
+      return;
+    }
+    setFormData({ ...formData, receipt: picked });
+  };
+
   if (!isOpen) return null;
 
   const handleSubmit = async () => {
+    if (!formData.file) { alert("Please attach a PDF file."); return; }
+    if (!formData.receipt) { alert("Please upload a photo of your printing receipt."); return; }
     setIsSubmitting(true);
       const vCode = generateVerificationCode();
       const data = new FormData();
@@ -131,6 +167,8 @@ const ResearchPostModal = ({ isOpen, onClose, student }: any) => {
       data.append('submitted_by', student.student_id || student.id);
       data.append('program', student.course);
       data.append('verification_code', vCode);
+      data.append('file', formData.file);
+      data.append('receipt', formData.receipt);
 
       const allAuthors = [
         {
@@ -144,13 +182,6 @@ const ResearchPostModal = ({ isOpen, onClose, student }: any) => {
     ];
     data.append('authors', JSON.stringify(allAuthors));
       data.append('keywords', JSON.stringify(formData.keywords));
-    
-      if (formData.file) {
-        data.append('file', formData.file);
-      } else {
-        alert("Please attach a PDF file.");
-        return;
-      }
 
       try {
         const response = await axios.post(`${API_BASE_URL}/student/add_research.php`, data, {
@@ -246,8 +277,8 @@ const ResearchPostModal = ({ isOpen, onClose, student }: any) => {
                   onChange={(e) => setFormData({...formData, type: e.target.value})}
               >
                 <option value="" disabled>Select Type</option>
-                <option value="Thesis">Thesis</option>
-                <option value="Capstone">Capstone</option>
+                <option value="Thesis">Thesis Project</option>
+                <option value="Capstone">Capstone Project</option>
                 <option value="Design Project">Design Project</option>
               </select>
               <ChevronDown size={12} className="absolute right-2 pointer-events-none text-gray-400" />
@@ -384,6 +415,34 @@ const ResearchPostModal = ({ isOpen, onClose, student }: any) => {
                  onChange={(e) => setFormData({...formData, file: e.target.files?.[0] || null})}
                />
             </label>
+
+            {/* Printing Receipt Upload (required) */}
+            <div className="mt-4 space-y-2">
+              <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">
+                Printing Receipt <span className="text-red-500">*</span>
+              </p>
+              <label className={`flex flex-col items-center justify-center w-full ${receiptPreview ? 'h-auto p-3' : 'h-32'} border-2 border-dashed rounded-3xl cursor-pointer transition-all group ${
+                !formData.receipt ? 'border-amber-200 bg-amber-50/30' : 'border-gray-200 hover:border-cvsu-green-base/50 hover:bg-gray-50'
+              }`}>
+                {receiptPreview ? (
+                  <img src={receiptPreview} alt="Printing receipt preview" className="max-h-48 rounded-2xl object-contain" />
+                ) : (
+                  <ImagePlus className="mb-2 text-amber-400" />
+                )}
+                <span className={`text-xs font-bold uppercase tracking-widest text-center ${receiptPreview ? 'mt-2' : ''} ${
+                  !formData.receipt ? 'text-amber-600' : 'text-gray-500 group-hover:text-cvsu-green-base'
+                }`}>
+                  {formData.receipt ? formData.receipt.name : "Attach Printing Receipt (Photo)"}
+                </span>
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  className="hidden"
+                  onChange={handleReceiptChange}
+                />
+              </label>
+              {receiptError && <p className="text-[11px] font-bold text-red-500 px-1">{receiptError}</p>}
+            </div>
           </div>
         </div>
 

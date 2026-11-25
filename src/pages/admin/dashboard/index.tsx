@@ -1,7 +1,6 @@
  
 // src\pages\admin\dashboard\index.tsx
 import { motion, AnimatePresence } from "framer-motion";
-import { MonitorXIcon, LogOutIcon } from "lucide-react";
 
 // Context & Navigation Sidebar
 import Sidebar from "@/pages/admin/scenes/sidebar";
@@ -16,6 +15,7 @@ import AccountSettings from "@/components/shared/AccountSettings";
 import AttendanceLog from "@/pages/admin/dashboard/scenes/activityLogs/attendance";
 import CirculationLog from "@/pages/admin/dashboard/scenes/activityLogs/circulation";
 import AuditLogs from "@/pages/admin/dashboard/scenes/auditLogs";
+import MobileStudentView from "@/pages/admin/dashboard/components/MobileStudentView";
 
 // Shared Dashboard Components & Injected Modular Tabs
 import DashboardAnalytics from "@/pages/admin/dashboard/components/DashboardAnalytics";
@@ -34,33 +34,7 @@ const AdminDashboard = () => {
 
   // --- CASE A: MOBILE ACCESS PROTECTION BARRIER ACCESS SHIELD ---
   if (isMobile) {
-    return (
-      <div className="h-screen w-full flex flex-col items-center justify-center bg-white p-10 text-center font-dm select-none">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="max-w-xs"
-        >
-          <div className="bg-red-50 p-6 rounded-full inline-block mb-6 text-red-500">
-            <MonitorXIcon size={48} />
-          </div>
-          <h2 className="text-2xl font-montserrat font-black text-cvsu-green-dark uppercase leading-tight">
-            Mobile Access Restricted
-          </h2>
-          <p className="text-cvsu-gray text-sm mt-4 leading-relaxed font-medium">
-            The Admin Dashboard is not optimized for mobile screens. Please use a **Desktop** or **Laptop** workstation to manage the system.
-          </p>
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="mt-10 w-full flex items-center justify-center gap-2 bg-cvsu-green-base text-white py-4 rounded-2xl font-bold uppercase tracking-widest text-xs hover:bg-cvsu-green-dark transition-all shadow-md cursor-pointer group"
-          >
-            <LogOutIcon size={18} className="group-hover:translate-x-0.5 transition-transform" />
-            Return to Login
-          </button>
-        </motion.div>
-      </div>
-    );
+    return <MobileStudentView onLogout={handleLogout} />
   }
 
   // --- CASE B: STANDARD DESKTOP SCREEN VIEW ROUTER ---

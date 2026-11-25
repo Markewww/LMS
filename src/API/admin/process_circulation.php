@@ -1,12 +1,14 @@
 <?php
-// 1. ALLOW CORS AND DEFINE JSON OUTPUT HEADERS
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: POST");
-header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
-header("Content-Type: application/json; charset=UTF-8");
-
-// 2. INCLUDE DATABASE CONFIGURATION
+// src/API/admin/process_circulation.php
+// CORS headers are handled centrally in dbconfig.php
 require_once "../dbconfig.php";
+require_once "../require_admin.php";
+require_once "../activity_logger.php";
+
+// ---- BORROWING LIMIT ----
+// Maximum number of items (books + researches combined) a student may hold at the same time.
+// To borrow another one, the student must return something first.
+const MAX_ACTIVE_BORROWS = 5;
 
 if (!$conn) {
     http_response_code(500);
@@ -14,13 +16,15 @@ if (!$conn) {
     exit;
 }
 
+requireStaff($conn);
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     echo json_encode(["success" => false, "message" => "Method Not Allowed. Use POST requests."]);
     exit;
 }
 
-// 3. READ COMPRESSED JSON POST PAYLOAD BODY FROM REACT
+// 3. READ JSON POST PAYLOAD FROM REACT
 $data = json_decode(file_get_contents("php://input"), true);
 $student_id = $data['student_id'] ?? null;
 $asset_code = $data['asset_code'] ?? null;
@@ -38,7 +42,6 @@ try {
     $is_research = false;
 
     // 4. IDENTIFY IF THE SCANNED CODE IS A BOOK OR A RESEARCH MANUSCRIPT
-    // Check Books Inventory First
     $bookCheck = $conn->prepare("SELECT title, stock FROM books_inventory WHERE barcode = ? LIMIT 1");
     $bookCheck->bind_param("s", $asset_code);
     $bookCheck->execute();
@@ -49,7 +52,6 @@ try {
         $asset_type = "book";
         $is_book = true;
     } else {
-        // If not a book, check Research Projects
         $researchCheck = $conn->prepare("SELECT title FROM research_projects WHERE code = ? LIMIT 1");
         $researchCheck->bind_param("s", $asset_code);
         $researchCheck->execute();
@@ -62,14 +64,13 @@ try {
         }
     }
 
-    // If item doesn't exist in either inventory table
     if (!$is_book && !$is_research) {
         http_response_code(404);
         echo json_encode(["success" => false, "message" => "Item tracking code not found in Library or Research registry."]);
         exit;
     }
 
-    // 5. AUTOMATIC TRANSACTION SELECTOR (CHECK IF ACTIVE LOAN EXISTS FOR THIS STUDENT)
+    // 5. CHECK IF AN ACTIVE LOAN EXISTS FOR THIS STUDENT
     $has_active_loan = false;
     $log_uuid = "";
 
@@ -78,7 +79,6 @@ try {
     } else {
         $loanCheck = $conn->prepare("SELECT uuid FROM research_logs WHERE student_id = ? AND code = ? AND status IN ('borrowed', 'overdue') LIMIT 1");
     }
-    
     $loanCheck->bind_param("ss", $student_id, $asset_code);
     $loanCheck->execute();
     $loanRow = $loanCheck->get_result()->fetch_assoc();
@@ -93,15 +93,13 @@ try {
         // --- ACTION A: PROCESS RETURN (CHECK-IN) ---
         if ($is_book) {
             $updateLog = $conn->prepare("UPDATE circulation_logs SET return_date = CURDATE(), status = 'returned' WHERE uuid = ?");
-            // Increment book inventory stock count by 1
             $updateStock = $conn->prepare("UPDATE books_inventory SET stock = stock + 1 WHERE barcode = ?");
             $updateStock->bind_param("s", $asset_code);
             $updateStock->execute();
         } else {
             $updateLog = $conn->prepare("UPDATE research_logs SET return_date = CURDATE(), status = 'returned' WHERE uuid = ?");
         }
-        
-        $updateLog->with = false;
+
         $updateLog->bind_param("s", $log_uuid);
         $updateLog->execute();
 
@@ -110,22 +108,42 @@ try {
 
     } else {
         // --- ACTION B: PROCESS BORROW (CHECK-OUT) ---
-        // Inventory availability check for books
+
+        // Borrow limit: count everything this student currently holds (books + researches)
+        $countStmt = $conn->prepare("SELECT
+              (SELECT COUNT(*) FROM circulation_logs WHERE student_id = ? AND status IN ('borrowed', 'overdue'))
+            + (SELECT COUNT(*) FROM research_logs WHERE student_id = ? AND status IN ('borrowed', 'overdue'))
+            AS total_active");
+        $countStmt->bind_param("ss", $student_id, $student_id);
+        $countStmt->execute();
+        $active_count = (int)$countStmt->get_result()->fetch_assoc()['total_active'];
+        $countStmt->close();
+
+        if ($active_count >= MAX_ACTIVE_BORROWS) {
+            // Stays HTTP 200 so the kiosk shows this message in its red alert card
+            http_response_code(200);
+            echo json_encode([
+                "success" => false,
+                "limit_reached" => true,
+                "message" => "Borrow limit reached: this student already holds " . $active_count
+                           . " items (maximum " . MAX_ACTIVE_BORROWS . "). Please return an item first."
+            ]);
+            exit;
+        }
+
         if ($is_book && $bookRow['stock'] <= 0) {
             http_response_code(200);
             echo json_encode(["success" => false, "message" => "Transaction Denied: This book copy is currently out of stock."]);
             exit;
         }
 
-        // Generate a clean transaction UUID
         $new_uuid = bin2hex(random_bytes(16));
-        
-        // Define standard grace periods (Books = 7 Days, Researches must stay in room = 1 Day/Same Day)
-        $days_allowed = $is_book ? 7 : 0; 
+
+        // Books = 7 days, researches must stay in the room (same day)
+        $days_allowed = $is_book ? 7 : 0;
 
         if ($is_book) {
             $insertLog = $conn->prepare("INSERT INTO circulation_logs (uuid, student_id, barcode, borrow_date, due_date, status) VALUES (?, ?, ?, CURDATE(), DATE_ADD(CURDATE(), INTERVAL ? DAY), 'borrowed')");
-            // Decrement book inventory stock count by 1
             $updateStock = $conn->prepare("UPDATE books_inventory SET stock = stock - 1 WHERE barcode = ?");
             $updateStock->bind_param("s", $asset_code);
             $updateStock->execute();
@@ -138,17 +156,22 @@ try {
         } else {
             $insertLog->bind_param("sss", $new_uuid, $student_id, $asset_code);
         }
-        
         $insertLog->execute();
 
         $action_msg = "Asset successfully checked out.";
         $action_type = "borrow";
     }
 
-    // 7. FETCH FRESH UPDATED LEDGER ARRAYS FOR REACT TO IMMEDIATELY RENDER ON MONITOR
+    // ---- AUDIT LOG: who processed which transaction ----
+    logActivity($conn, 'circulation.' . $action_type, $is_book ? 'books_inventory' : 'research_project', $asset_code, [
+        'student_id'  => $student_id,
+        'asset_title' => $asset_title,
+        'asset_type'  => $asset_type,
+    ]);
+
+    // 7. FETCH FRESH LEDGER ARRAYS FOR REACT
     $updatedAssets = [];
-    
-    // Fetch remaining books
+
     $freshBooks = $conn->prepare("SELECT cl.barcode AS asset_id, bi.title AS asset_title, cl.borrow_date, cl.due_date FROM circulation_logs cl JOIN books_inventory bi ON cl.barcode = bi.barcode WHERE cl.student_id = ? AND cl.status IN ('borrowed', 'overdue')");
     $freshBooks->bind_param("s", $student_id);
     $freshBooks->execute();
@@ -157,7 +180,6 @@ try {
         $updatedAssets[] = ["asset_id" => $r['asset_id'], "asset_title" => $r['asset_title'], "asset_type" => "book", "borrow_date" => $r['borrow_date'], "due_date" => $r['due_date']];
     }
 
-    // Fetch remaining research papers
     $freshResearch = $conn->prepare("SELECT rl.code AS asset_id, rp.title AS asset_title, rl.borrow_date, rl.due_date FROM research_logs rl JOIN research_projects rp ON rl.code = rp.code WHERE rl.student_id = ? AND rl.status IN ('borrowed', 'overdue')");
     $freshResearch->bind_param("s", $student_id);
     $freshResearch->execute();
@@ -166,14 +188,16 @@ try {
         $updatedAssets[] = ["asset_id" => $r['asset_id'], "asset_title" => $r['asset_title'], "asset_type" => "research", "borrow_date" => $r['borrow_date'], "due_date" => $r['due_date']];
     }
 
-    // 8. DISPATCH LIVE PAYLOAD RESPONSES
+    // 8. RESPONSE
     http_response_code(200);
     echo json_encode([
         "success"        => true,
         "action"         => $action_type,
         "message"        => $action_msg,
         "asset_title"    => $asset_title,
-        "updated_assets" => $updatedAssets
+        "updated_assets" => $updatedAssets,
+        "active_count"   => count($updatedAssets),
+        "borrow_limit"   => MAX_ACTIVE_BORROWS
     ]);
 
 } catch (Exception $e) {

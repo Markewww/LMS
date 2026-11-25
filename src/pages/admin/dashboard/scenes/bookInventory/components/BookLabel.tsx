@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { QRCode } from "react-qrcode-logo";
 import Barcode from "react-barcode";
 
@@ -18,11 +19,15 @@ const BookLabel = ({ selectedBook }: { selectedBook: any }) => {
       <div className="p-2 bg-white border border-gray-100 rounded-md">
         <QRCode 
           value={selectedBook.qr_data || `BOOK-${selectedBook.book_id}`} 
+          logoImage="/src/images/cvsu-logo.png"
+          qrStyle="squares"
+          eyeRadius={0}
+          fgColor="#000000"
           size={500} 
           ecLevel="H"
           style={{ 
-              width: '150px',
-              height: '150px',
+              width: '170px',
+              height: '170px',
               imageRendering: "pixelated" }}
         />
       </div>
@@ -31,7 +36,7 @@ const BookLabel = ({ selectedBook }: { selectedBook: any }) => {
       <div className="w-full flex justify-center scale-90">
         <Barcode 
           value={selectedBook.barcode || selectedBook.book_id} 
-          width={1.5}
+          width={2.5}
           height={50}
           fontSize={12}
         />
@@ -46,3 +51,5 @@ const BookLabel = ({ selectedBook }: { selectedBook: any }) => {
 };
 
 export default BookLabel;
+
+
