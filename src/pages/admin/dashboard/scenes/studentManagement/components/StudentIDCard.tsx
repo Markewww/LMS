@@ -66,3 +66,4 @@ const StudentIDCard = ({ selectedStudent }: Props) => {
 };
 
 export default StudentIDCard;
+

@@ -75,7 +75,7 @@ const AuditLogs = () => {
     <div className="p-6 space-y-4">
       <div>
         <h1 className="text-2xl font-bold text-green-700">Audit Logs</h1>
-        <p className="text-sm text-gray-500">A record of every action taken by admins. Visible to superadmins only.</p>
+        <p className="text-sm text-gray-500">A record of every action taken by staffs. Visible to admins only.</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

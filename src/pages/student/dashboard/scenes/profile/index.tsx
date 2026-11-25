@@ -4,24 +4,41 @@ import { Mail, GraduationCap, IdCard, BadgeCheck, ArrowLeft, Download, X } from 
 import { motion, AnimatePresence } from "framer-motion";
 import Timeline from "./components/Timeline";
 import { QRCode } from "react-qrcode-logo";
+import * as htmlToImage from "html-to-image";
 
 const StudentProfile = ({ studentData }: { studentData: any }) => {
   const [isMobileTimelineOpen, setIsMobileTimelineOpen] = useState(false);
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
 
-  // Function to handle downloading the QR Code canvas
-  const handleDownloadQR = () => {
-    const canvas = document.getElementById("student-qr-canvas") as HTMLCanvasElement;
-    if (canvas) {
-      const pngUrl = canvas.toDataURL("image/png");
-      const downloadLink = document.createElement("a");
-      downloadLink.href = pngUrl;
-      downloadLink.download = `${studentData?.student_id || "student"}_qr.png`;
-      document.body.appendChild(downloadLink);
-      downloadLink.click();
-      document.body.removeChild(downloadLink);
+  const handleDownload = async () => {
+  const studentId = studentData?.student_id || studentData?.id || "student";
+  const sides = [
+    { id: "id-front", fileName: `FCEITRR-${studentId}.png` },
+    { id: "id-back", fileName: `BCEITRR-${studentId}.png` },
+  ];
+
+  for (const side of sides) {
+    const element = document.getElementById(side.id);
+    if (!element) continue;
+
+    try {
+      const dataURL = await htmlToImage.toPng(element, {
+        quality: 1.0,
+        pixelRatio: 4,
+        backgroundColor: "#ffffff",
+        cacheBust: true,
+      });
+      const link = document.createElement("a");
+      link.href = dataURL;
+      link.download = side.fileName;
+      link.click();
+    } catch (error) {
+      console.error("Image generation failed:", error);
+      alert("Failed to generate your ID image. Please try again, or take a screenshot of your ID card.");
+      return;
     }
-  };
+  }
+};
 
   return (
     <motion.div
@@ -105,10 +122,10 @@ const StudentProfile = ({ studentData }: { studentData: any }) => {
                 <h3 className="text-lg font-bold text-gray-900">Student QR ID Pass</h3>
                 <div className="flex items-center gap-2">
                   <button 
-                    onClick={handleDownloadQR}
+                    onClick={handleDownload}
                     className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-white bg-cvsu-green-base hover:bg-cvsu-green-dark rounded-xl transition-colors shadow-sm"
                   >
-                    <Download size={16} /> Download QR
+                    <Download size={16} /> Download ID Card
                   </button>
                   <button 
                     onClick={() => setIsQRModalOpen(false)} 

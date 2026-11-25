@@ -1,9 +1,11 @@
 <?php
 // src/API/activity_logger.php
 //
-// Usage:  logActivity($conn, 'book.add', 'books_inventory', $barcode, ['title' => $title]);
+// logActivity($conn, 'book.add', 'books_inventory', $barcode, ['title' => $title]);
+// logChange($conn, 'book.edit', 'books_inventory', $barcode, $before, $after);
+//
 // $actor is only for events where no session exists yet (e.g. failed login):
-//         ['uuid' => 1, 'user_id' => 'SA-001', 'name' => 'Juan', 'role' => 'superadmin']
+//   ['uuid' => 1, 'user_id' => 'SA-001', 'name' => 'Juan', 'role' => 'superadmin']
 
 function logActivity($conn, $action, $targetType = null, $targetId = null, $details = null, $actor = null) {
     try {
@@ -14,6 +16,8 @@ function logActivity($conn, $action, $targetType = null, $targetId = null, $deta
         $name = $actor['name']    ?? ($_SESSION['full_name'] ?? $uid);
         $role = $actor['role']    ?? ($_SESSION['user_type'] ?? 'admin');
 
+        // Nothing to attribute: no identified staff member
+        if ($uid === 'unknown') return;
         // The log only tracks staff. Never record student activity here.
         if (!in_array($role, ['admin', 'superadmin'], true)) return;
 
@@ -32,4 +36,26 @@ function logActivity($conn, $action, $targetType = null, $targetId = null, $deta
         // A logging failure must never break the real action
         error_log("Activity log failed: " . $e->getMessage());
     }
+}
+
+// Shortens very long values (abstracts etc.) so the log stays readable
+function auditTrim($v) {
+    if (is_string($v) && mb_strlen($v) > 200) return mb_substr($v, 0, 200) . '…';
+    return $v;
+}
+
+// Logs only the fields that actually changed, as {before:{...}, after:{...}}.
+// Nothing is written when nothing changed. $extra is merged into the details.
+function logChange($conn, $action, $targetType, $targetId, array $before, array $after, array $extra = []) {
+    $b = [];
+    $a = [];
+    foreach ($after as $key => $value) {
+        $old = $before[$key] ?? null;
+        if ((string)$old !== (string)$value) {
+            $b[$key] = auditTrim($old);
+            $a[$key] = auditTrim($value);
+        }
+    }
+    if (!$a) return;
+    logActivity($conn, $action, $targetType, $targetId, $extra + ['before' => $b, 'after' => $a]);
 }

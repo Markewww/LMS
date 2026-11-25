@@ -1,12 +1,8 @@
 <?php
-// 1. ALLOW CORS AND DEFINE JSON OUTPUT HEADERS
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: POST");
-header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
-header("Content-Type: application/json; charset=UTF-8");
-
-// 2. INCLUDE DATABASE CONNECTION CONFIG
+// src/API/auth/change_password.php
+// CORS headers are handled centrally in dbconfig.php
 require_once "../dbconfig.php";
+require_once "../activity_logger.php";
 
 if (!$conn) {
     http_response_code(500);
@@ -34,7 +30,7 @@ if (!$user_id || !$current_password || !$new_password) {
 }
 
 try {
-    // 4. UNIFIED ROW ACCESS QUERY (Fixed to target your real 'accounts' table)
+    // 4. FETCH THE ACCOUNT
     $fetchSql = "SELECT password FROM accounts WHERE user_id = ? LIMIT 1";
     $fetchStmt = $conn->prepare($fetchSql);
     $fetchStmt->bind_param("s", $user_id);
@@ -47,20 +43,25 @@ try {
         exit();
     }
 
-    // 5. CRYPTOGRAPHIC VERIFICATION CHECK
+    // 5. VERIFY CURRENT PASSWORD
     if (!password_verify($current_password, $userData['password'])) {
+        // Only staff sessions are recorded (the logger skips students automatically)
+        logActivity($conn, 'auth.password_change_failed', 'accounts', $user_id, ['reason' => 'wrong_current_password']);
+
         http_response_code(200); // 200 lets your custom React modals catch validation flags smoothly
         echo json_encode(["success" => false, "message" => "The current password you entered is incorrect."]);
         exit();
     }
 
-    // 6. COMPILE SECURE NEW HASH VALUE AND RE-WRITE ACCOUNT RECORD
+    // 6. SAVE THE NEW HASH
     $hashed_new_password = password_hash($new_password, PASSWORD_BCRYPT);
-    
     $updateSql = "UPDATE accounts SET password = ? WHERE user_id = ?";
     $updateStmt = $conn->prepare($updateSql);
     $updateStmt->bind_param("ss", $hashed_new_password, $user_id);
     $updateStmt->execute();
+
+    // Never log any password value
+    logActivity($conn, 'auth.password_change', 'accounts', $user_id);
 
     http_response_code(200);
     echo json_encode(["success" => true, "message" => "Your password has been changed successfully!"]);

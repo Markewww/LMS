@@ -1,17 +1,11 @@
 <?php
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: GET, POST, DELETE, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
-
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit(); 
-}
-
+// src/API/admin/announcements.php
+// CORS headers and OPTIONS preflight are handled centrally in dbconfig.php
 require_once "../dbconfig.php";
+require_once "../require_admin.php";
+require_once "../activity_logger.php";
 
 if (!$conn) {
-    header("Content-Type: application/json; charset=UTF-8");
     http_response_code(500);
     echo json_encode(["error" => "Database Connection Failure"]);
     exit();
@@ -19,33 +13,36 @@ if (!$conn) {
 
 $method = $_SERVER['REQUEST_METHOD'];
 
+// Reading the feed stays public (students see it); posting and deleting are staff-only
+if ($method !== 'GET') {
+    requireStaff($conn);
+}
+
 try {
     // ─── GET: FETCH POSTS ───
     if ($method === 'GET') {
-        header("Content-Type: application/json; charset=UTF-8");
-        $query = "SELECT 
-                    a.id, 
-                    a.admin_id, 
-                    a.announcement_text, 
-                    a.image_path, 
-                    a.bg_id, 
-                    a.created_at,
-                    adm.first_name,
-                    adm.last_name
-                  FROM announcements a
-                  LEFT JOIN admin adm ON a.admin_id = adm.employee_id
-                  ORDER BY a.created_at DESC"; // ─── FIXED: Added the missing semicolon here ───
-                  
+        $query = "SELECT
+              a.id,
+              a.admin_id,
+              a.announcement_text,
+              a.image_path,
+              a.bg_id,
+              a.created_at,
+              adm.first_name,
+              adm.last_name
+              FROM announcements a
+          LEFT JOIN admin adm ON a.admin_id = adm.employee_id
+          ORDER BY a.created_at DESC";
+
         $result = $conn->query($query);
-        
         if (!$result) throw new Exception($conn->error);
-        
+
         $announcements = [];
         while ($row = $result->fetch_assoc()) {
-            $fullName = (!empty($row['first_name']) && !empty($row['last_name'])) 
+            $fullName = (!empty($row['first_name']) && !empty($row['last_name']))
                 ? $row['first_name'] . " " . $row['last_name']
                 : $row['admin_id'];
-                
+
             $announcements[] = [
                 "id" => (int)$row['id'],
                 "adminId" => $row['admin_id'],
@@ -56,19 +53,16 @@ try {
                 "createdAt" => $row['created_at']
             ];
         }
-        
         http_response_code(200);
         echo json_encode($announcements);
     }
-    
+
     // ─── POST: CREATE NEW MULTI-IMAGE/BG POST ───
     elseif ($method === 'POST') {
-        header("Content-Type: application/json; charset=UTF-8");
-        
+        $rawText = isset($_POST['text']) ? trim($_POST['text']) : '';
         $adminId = isset($_POST['adminId']) ? $conn->real_escape_string($_POST['adminId']) : '';
-        $text = isset($_POST['text']) ? $conn->real_escape_string($_POST['text']) : '';
+        $text = $conn->real_escape_string($rawText);
         $bgId = isset($_POST['bgId']) ? $conn->real_escape_string($_POST['bgId']) : 'none';
-        
         $uploadedPaths = [];
 
         if (empty($adminId) || empty($text)) {
@@ -80,7 +74,7 @@ try {
         if (isset($_FILES['images']['name']) && is_array($_FILES['images']['name'])) {
             $totalFiles = count($_FILES['images']['name']);
             $uploadTargetDir = '../../assets/uploads/images/';
-            
+
             if (!is_dir($uploadTargetDir)) {
                 mkdir($uploadTargetDir, 0755, true);
             }
@@ -90,12 +84,12 @@ try {
                     $fileTmpPath = $_FILES['images']['tmp_name'][$i];
                     $fileName = $_FILES['images']['name'][$i];
                     $fileExtension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
-                    
                     $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+
                     if (in_array($fileExtension, $allowedExtensions)) {
                         $newFileName = md5(time() . $fileName . $i) . '.' . $fileExtension;
                         $dest_path = $uploadTargetDir . $newFileName;
-                        
+
                         if (move_uploaded_file($fileTmpPath, $dest_path)) {
                             $uploadedPaths[] = "src/assets/uploads/images/" . $newFileName;
                         }
@@ -108,8 +102,16 @@ try {
         $db_image_val = $db_image_path ? "'$db_image_path'" : "NULL";
 
         $query = "INSERT INTO announcements (admin_id, announcement_text, image_path, bg_id) VALUES ('$adminId', '$text', $db_image_val, '$bgId')";
-        
+
         if ($conn->query($query)) {
+            $newId = $conn->insert_id;
+
+            logActivity($conn, 'announcement.create', 'announcements', (string)$newId, [
+                'text'   => auditTrim($rawText),
+                'images' => count($uploadedPaths),
+                'bg_id'  => $bgId,
+            ]);
+
             http_response_code(201);
             echo json_encode(["message" => "Announcement published successfully!"]);
         } else {
@@ -119,33 +121,42 @@ try {
 
     // ─── DELETE: REMOVE ANNOUNCEMENT AND ALL ITS FILES ───
     elseif ($method === 'DELETE') {
-        header("Content-Type: application/json; charset=UTF-8");
         $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
-        
+
         if ($id <= 0) {
             http_response_code(400);
             echo json_encode(["error" => "Invalid assignment target ID."]);
             exit();
         }
 
-        $findQuery = "SELECT image_path FROM announcements WHERE id = $id";
-        $findResult = $conn->query($findQuery);
-        
+        // Read the post first (also the audit snapshot)
+        $findResult = $conn->query("SELECT admin_id, announcement_text, image_path FROM announcements WHERE id = $id");
+        $old = null;
+
         if ($findResult && $findResult->num_rows > 0) {
-            $row = $findResult->fetch_assoc();
-            if (!empty($row['image_path'])) {
-                $images = explode(",", $row['image_path']);
+            $old = $findResult->fetch_assoc();
+
+            if (!empty($old['image_path'])) {
+                $images = explode(",", $old['image_path']);
                 foreach ($images as $img) {
                     $physicalPath = str_replace("src/", "../../", trim($img));
                     if (file_exists($physicalPath)) {
-                        unlink($physicalPath); 
+                        unlink($physicalPath);
                     }
                 }
             }
         }
 
-        $deleteQuery = "DELETE FROM announcements WHERE id = $id";
-        if ($conn->query($deleteQuery)) {
+        if ($conn->query("DELETE FROM announcements WHERE id = $id")) {
+            if ($old) {
+                logActivity($conn, 'announcement.delete', 'announcements', (string)$id, [
+                    'deleted' => [
+                        'posted_by' => $old['admin_id'],
+                        'text'      => auditTrim($old['announcement_text']),
+                        'images'    => empty($old['image_path']) ? 0 : count(explode(",", $old['image_path'])),
+                    ],
+                ]);
+            }
             http_response_code(200);
             echo json_encode(["message" => "Post removed successfully!"]);
         } else {
