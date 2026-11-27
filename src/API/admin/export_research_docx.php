@@ -45,6 +45,20 @@ if ($result) {
 $totalResearches = count($researches);
 arsort($programCounts);
 
+// If requested by the React Preview Modal, return the exact JSON data
+if (isset($_GET['preview']) && $_GET['preview'] === '1') {
+    header("Content-Type: application/json");
+    echo json_encode([
+        "success" => true,
+        "researches" => $researches,
+        "programCounts" => $programCounts,
+        "totalResearches" => $totalResearches
+    ]);
+    $conn->close();
+    exit();
+}
+
+
 // 3. PIE CHART (PHP GD)
 $chartPngData = null;
 $chartWidth  = 760;
@@ -157,12 +171,42 @@ function tblStart($totalWidth, array $grid, $borderColor) {
     return $xml . '</w:tblGrid>';
 }
 
+// Load CvSU Header Banner (100% full page width = 8.5 in = 7,772,400 EMUs)
+$headerImgPath = __DIR__ . "/../../images/cvsu-header-bagong-pilipinas-HD.png";
+$headerImgData = null;
+$headerEmuW = 0;
+$headerEmuH = 0;
+
+if (file_exists($headerImgPath)) {
+    $headerImgData = file_get_contents($headerImgPath);
+    $imgSize = @getimagesize($headerImgPath);
+    if ($imgSize && $imgSize[0] > 0 && $imgSize[1] > 0) {
+        $headerEmuW = 7772400; // Full 8.5 in page width
+        $headerEmuH = (int)round($headerEmuW * ($imgSize[1] / $imgSize[0]));
+    }
+}
+
 // 5. BUILD document.xml BODY
 $green = "15803D";
 $lightGreenBg = "DCFCE7";
 $borderColor = "D1D5DB";
-
 $bodyXml = '';
+
+// Header Banner Image (negative indents pull it edge-to-edge across the 0.75 in margins)
+if ($headerImgData !== null && $headerEmuW > 0) {
+    $bodyXml .= '<w:p><w:pPr><w:spacing w:before="0" w:after="160"/><w:ind w:left="-1080" w:right="-1080"/><w:jc w:val="center"/></w:pPr><w:r><w:drawing>'
+        . '<wp:inline distT="0" distB="0" distL="0" distR="0">'
+        . '<wp:extent cx="' . $headerEmuW . '" cy="' . $headerEmuH . '"/>'
+        . '<wp:docPr id="2" name="CvSU Header Banner"/>'
+        . '<a:graphic><a:graphicData uri="http://openxmlformats.org">'
+        . '<pic:pic>'
+        . '<pic:nvPicPr><pic:cNvPr id="1" name="header.png"/><pic:cNvPicPr/></pic:nvPicPr>'
+        . '<pic:blipFill><a:blip r:embed="rIdHeader"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>'
+        . '<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="' . $headerEmuW . '" cy="' . $headerEmuH . '"/></a:xfrm>'
+        . '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr>'
+        . '</pic:pic></a:graphicData></a:graphic>'
+        . '</wp:inline></w:drawing></w:r></w:p>';
+}
 
 // Title + subtitle
 $bodyXml .= para('Reading Room Researches Masterlist', [
@@ -192,35 +236,6 @@ if ($chartPngData !== null) {
         . '</wp:inline></w:drawing></w:r></w:p>';
 }
 
-// Summary table
-$bodyXml .= para('Research Distribution Summary by Program', [
-    'center' => true, 'before' => 100, 'after' => 100,
-    'bold' => true, 'color' => $green, 'sz' => 24
-]);
-
-$bodyXml .= tblStart(7500, [4300, 1600, 1600], $borderColor);
-$hdr = ['bold' => true, 'color' => 'FFFFFF', 'sz' => 20, 'fill' => $green];
-$bodyXml .= '<w:tr>'
-    . tc(4300, 'Program', $hdr)
-    . tc(1600, 'Total Uploaded', $hdr + ['center' => true])
-    . tc(1600, 'Percentage', $hdr + ['center' => true])
-    . '</w:tr>';
-
-foreach ($programCounts as $prog => $count) {
-    $pct = $totalResearches > 0 ? number_format(($count / $totalResearches) * 100, 1) . '%' : '0.0%';
-    $bodyXml .= '<w:tr>'
-        . tc(4300, $prog, ['sz' => 20])
-        . tc(1600, (string)$count, ['sz' => 20, 'center' => true])
-        . tc(1600, $pct, ['sz' => 20, 'center' => true])
-        . '</w:tr>';
-}
-
-$tot = ['bold' => true, 'color' => $green, 'sz' => 20, 'fill' => $lightGreenBg];
-$bodyXml .= '<w:tr>'
-    . tc(4300, 'TOTAL RESEARCH OF ALL PROGRAMS', $tot)
-    . tc(1600, (string)$totalResearches, $tot + ['center' => true])
-    . tc(1600, $totalResearches > 0 ? '100.0%' : '0.0%', $tot + ['center' => true])
-    . '</w:tr></w:tbl>';
 
 // Masterlist table
 $bodyXml .= para('Approved Researches Masterlist (Latest Uploads First)', [
@@ -288,11 +303,22 @@ $rootRelsXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
     . '</Relationships>';
 
 $docRelsXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
-    . '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">';
-if ($chartPngData !== null) {
-    $docRelsXml .= '<Relationship Id="rIdChart" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/chart.png"/>';
+    . '<Relationships xmlns="http://openxmlformats.org">';
+
+if ($headerImgData !== null) {
+    $docRelsXml .= '<Relationship Id="rIdHeader" '
+        . 'Type="http://openxmlformats.org" '
+        . 'Target="media/header.png"/>';
 }
+
+if ($chartPngData !== null) {
+    $docRelsXml .= '<Relationship Id="rIdChart" '
+        . 'Type="http://openxmlformats.org" '
+        . 'Target="media/chart.png"/>';
+}
+
 $docRelsXml .= '</Relationships>';
+
 
 $tempFile = tempnam(sys_get_temp_dir(), 'docx_');
 $zip = new ZipArchive();
@@ -306,6 +332,9 @@ $zip->addFromString('word/_rels/document.xml.rels', $docRelsXml);
 $zip->addFromString('word/document.xml', $documentXml);
 if ($chartPngData !== null) {
     $zip->addFromString('word/media/chart.png', $chartPngData);
+}
+if ($headerImgData !== null) {
+    $zip->addFromString('word/media/header.png', $headerImgData);
 }
 $zip->close();
 

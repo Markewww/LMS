@@ -30,6 +30,8 @@ const ResearchPostModal = ({ isOpen, onClose, student }: any) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
   const [receiptError, setReceiptError] = useState('');
+  const [researchTypes, setResearchTypes] = useState<{ id: number; setting_value: string }[]>([]);
+
 
   const [formData, setFormData] = useState({
     title: '',
@@ -58,7 +60,20 @@ const ResearchPostModal = ({ isOpen, onClose, student }: any) => {
           console.error("Error fetching students for mentions:", error);
         }
       };
+
+      const fetchResearchTypes = async () => {
+        try {
+          const res = await axios.get(`${API_BASE_URL}/admin/manage_research_types.php`);
+          if (res.data.success) {
+            setResearchTypes(res.data.types);
+          }
+        } catch (error) {
+          console.error("Error fetching research types:", error);
+        }
+      };
+
       fetchStudents();
+      fetchResearchTypes();
     }
   }, [isOpen, student]);
 
@@ -271,15 +286,17 @@ const ResearchPostModal = ({ isOpen, onClose, student }: any) => {
               <BookOpen size={14} className={!formData.type ? 'text-amber-500' : 'text-cvsu-green-base'} />
               <select 
                 className={`bg-transparent text-[10px] font-black uppercase border-none focus:ring-0 p-0 appearance-none pr-5 cursor-pointer ${
-                    formData.type === '' ? 'text-amber-600' : 'text-cvsu-green-base'
-                  }`}
-                  value={formData.type}
-                  onChange={(e) => setFormData({...formData, type: e.target.value})}
+                  formData.type === '' ? 'text-amber-600' : 'text-cvsu-green-base'
+                }`}
+                value={formData.type}
+                onChange={(e) => setFormData({...formData, type: e.target.value})}
               >
                 <option value="" disabled>Select Type</option>
-                <option value="Thesis">Thesis Project</option>
-                <option value="Capstone">Capstone Project</option>
-                <option value="Design Project">Design Project</option>
+                {researchTypes.map((item) => (
+                  <option key={item.id} value={item.setting_value}>
+                    {item.setting_value}
+                  </option>
+                ))}
               </select>
               <ChevronDown size={12} className="absolute right-2 pointer-events-none text-gray-400" />
             </div>
@@ -350,7 +367,7 @@ const ResearchPostModal = ({ isOpen, onClose, student }: any) => {
                     <UserCheck size={18} className="text-amber-500" />
                     <input 
                       type="text" 
-                      placeholder="Thesis Adviser" 
+                      placeholder="Adviser" 
                       className="flex-1 text-xs border-none focus:ring-0 p-0 font-bold"
                       onChange={(e) => setFormData({...formData, adviser: e.target.value})}
                     />

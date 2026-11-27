@@ -1,5 +1,5 @@
-import { useState } from "react";
-// Icons
+import { useEffect, useState } from "react";
+import axios from "axios";
 import {
   UsersIcon,
   CheckCircleIcon,
@@ -9,9 +9,11 @@ import {
   ChevronsLeft,
   ChevronsRight,
   BadgeCheckIcon,
+  FileCheck2Icon,
 } from "lucide-react";
 // Components
 import ConfirmationModal from "./alerts/ConfirmationModal";
+import { API_BASE_URL } from "@/API/APIConfig";
 
 interface StudentRecord {
   student_id: string;
@@ -21,6 +23,8 @@ interface StudentRecord {
   course: string;
   account_status: "active" | "pending" | "inactive";
   research_badge?: string | null;
+  clearance_signed?: number | boolean;
+  verified_year?: string | number | null;
 }
 
 type Props = {
@@ -39,14 +43,46 @@ const StudentTable = ({ students, onUpdateStatus, onViewDetails }: Props) => {
     isOpen: false,
   });
 
+  const [localStudents, setLocalStudents] = useState<StudentRecord[]>(students);
+
+  useEffect(() => {
+    setLocalStudents(students);
+  }, [students]);
+
   // Calculate local page boundary math configurations
-  const totalRows = students.length;
+  const totalRows = localStudents.length;
   const totalPages = Math.ceil(totalRows / rowsPerPage);
   const startIndex = (currentPage - 1) * rowsPerPage;
   const endIndex = Math.min(startIndex + rowsPerPage, totalRows);
+  const paginatedStudents = localStudents.slice(startIndex, endIndex);
+  const handleToggleSigned = async (student: StudentRecord) => {
+    const nextState = !Boolean(Number(student.clearance_signed));
+    const actionLabel = nextState ? "mark this student's clearance as Signed" : "remove the Signed mark";
 
-  // Slice row array to only map out the targeted active index data chunk
-  const paginatedStudents = students.slice(startIndex, endIndex);
+    if (!confirm(`Are you sure you want to ${actionLabel}?`)) return;
+
+    try {
+      const res = await axios.post(
+        `${API_BASE_URL}/admin/toggle_student_signed.php`,
+        { student_id: student.student_id, signed: nextState },
+        { withCredentials: true }
+      );
+
+      if (res.data.success) {
+        setLocalStudents(prev =>
+          prev.map(s =>
+            s.student_id === student.student_id
+              ? { ...s, clearance_signed: nextState ? 1 : 0 }
+              : s
+          )
+        );
+      } else {
+        alert(res.data.message);
+      }
+    } catch (err: any) {
+      alert("Failed to update signing status: " + (err.response?.data?.message || err.message));
+    }
+  };
 
   const handleOpenConfirm = (id: string) => {
     setConfirmData({ id, isOpen: true });
@@ -98,19 +134,36 @@ const StudentTable = ({ students, onUpdateStatus, onViewDetails }: Props) => {
                 <td className="p-4 font-bold text-gray-700">{student.student_id}</td>
                 <td className="p-4 text-gray-600">
                   <div>
-                    <p className="font-medium text-gray-800">
-                      {`${student.last_name}, ${student.first_name} ${student.suffix || ""}`}
+                    <p className="font-medium text-gray-800 flex items-center flex-wrap gap-2">
+                      <span>
+                        {`${student.last_name}, ${student.first_name} ${student.suffix || ""}`.trim()}
+                      </span>
+                                
+                      {student.research_badge === "verified" && student.verified_year && (
+                        <span className="px-2 py-0.5 rounded-md bg-green-50 text-green-700 border border-green-200 text-[11px] font-bold">
+                          {student.verified_year}
+                        </span>
+                      )}
                     </p>
-                    {student.research_badge === "verified" ? (
-                      <span className="inline-flex items-center gap-1 text-[11px] text-green-700 font-bold mt-0.5">
-                        <BadgeCheckIcon size={13} className="text-green-600" />
-                        Verified
-                      </span>
-                    ) : student.research_badge ? (
-                      <span className="text-xs text-gray-400 font-semibold block mt-0.5 tracking-wide">
-                        {student.research_badge}
-                      </span>
-                    ) : null}
+                    <div className="flex items-center flex-wrap gap-1.5 mt-0.5">
+                      {student.research_badge === "verified" ? (
+                        <span className="inline-flex items-center gap-1 text-[11px] text-green-700 font-bold">
+                          <BadgeCheckIcon size={13} className="text-green-600" />
+                          Verified
+                        </span>
+                      ) : student.research_badge ? (
+                        <span className="text-xs text-gray-400 font-semibold tracking-wide">
+                          {student.research_badge}
+                        </span>
+                      ) : null}
+
+                      {Boolean(Number(student.clearance_signed)) && (
+                        <span className="inline-flex items-center gap-1 text-[11px] text-blue-700 font-bold">
+                          {student.research_badge && <span className="text-gray-300">•</span>}
+                          Signed
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </td>
                 <td className="p-4 text-gray-600">{student.course}</td>
@@ -125,7 +178,7 @@ const StudentTable = ({ students, onUpdateStatus, onViewDetails }: Props) => {
                     {student.account_status}
                   </span>
                 </td>
-                <td className="p-4 flex items-center justify-center">
+                <td className="p-4 flex items-center justify-center gap-2">
                   {student.account_status === "pending" ? (
                     <button
                       onClick={() => handleOpenConfirm(student.student_id)}
@@ -135,13 +188,31 @@ const StudentTable = ({ students, onUpdateStatus, onViewDetails }: Props) => {
                       <CheckCircleIcon size={22} />
                     </button>
                   ) : (
-                    <button
-                      onClick={() => onViewDetails(student)}
-                      className="text-cvsu-green-base hover:scale-110 p-1 transition-transform cursor-pointer"
-                      title="View Details"
-                    >
-                      <EyeIcon size={20} />
-                    </button>
+                    <>
+                      <button
+                        onClick={() => handleToggleSigned(student)}
+                        className={`hover:scale-110 p-1 transition-transform cursor-pointer ${
+                          Boolean(Number(student.clearance_signed))
+                            ? "text-blue-600"
+                            : "text-gray-400 hover:text-blue-600"
+                        }`}
+                        title={
+                          Boolean(Number(student.clearance_signed))
+                            ? "Clearance Signed (Click to undo)"
+                            : "Mark Clearance as Signed"
+                        }
+                      >
+                        <FileCheck2Icon size={20} />
+                      </button>
+                      
+                      <button
+                        onClick={() => onViewDetails(student)}
+                        className="text-cvsu-green-base hover:scale-110 p-1 transition-transform cursor-pointer"
+                        title="View Details"
+                      >
+                        <EyeIcon size={20} />
+                      </button>
+                    </>
                   )}
                 </td>
               </tr>

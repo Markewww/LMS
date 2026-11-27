@@ -1,7 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { XIcon, FilePlusIcon, UploadCloudIcon, TagIcon, UserPlusIcon, PlusCircleIcon } from "lucide-react";
+import { 
+  XIcon, 
+  FilePlusIcon, 
+  UploadCloudIcon, 
+  TagIcon, 
+  UserPlusIcon, 
+  PlusCircleIcon,
+  ChevronDownIcon,
+  Trash2Icon,
+} from "lucide-react";
 import { API_BASE_URL } from "@/API/APIConfig";
 
 interface UploadLegacyResearchProps {
@@ -9,6 +18,11 @@ interface UploadLegacyResearchProps {
   onClose: () => void;
   onSuccess: () => void;
   currentAdminId: string;
+}
+
+interface ResearchTypeOption {
+  id: number;
+  setting_value: string;
 }
 
 const programAliases: Record<string, string> = {
@@ -31,7 +45,7 @@ const UploadLegacyResearch = ({ isOpen, onClose, onSuccess, currentAdminId }: Up
   const [formData, setFormData] = useState({
     code: "",
     title: "",
-    type: "Thesis",
+    type: "",
     program: "",
     year: "",
     authors: [] as string[], // Tracked directly as dynamic string array collection
@@ -60,6 +74,74 @@ const UploadLegacyResearch = ({ isOpen, onClose, onSuccess, currentAdminId }: Up
     }
   }, [formData.program, formData.year]);
 
+  // Fetch research types when modal opens
+  useEffect(() => {
+    if (!isOpen) return;
+    const fetchResearchTypes = async () => {
+      try {
+        const res = await axios.get(`${API_BASE_URL}/admin/manage_research_types.php`);
+        if (res.data.success) {
+          setResearchTypes(res.data.types);
+        }
+      } catch (err) {
+        console.error("Failed to fetch research types:", err);
+      }
+    };
+    fetchResearchTypes();
+  }, [isOpen]);
+
+  const handleAddResearchType = async () => {
+    const trimmed = newTypeInput.trim();
+    if (!trimmed) return;
+
+    try {
+      const res = await axios.post(`${API_BASE_URL}/admin/manage_research_types.php`, {
+        value: trimmed,
+      });
+      if (res.data.success) {
+        const created = { id: res.data.id, setting_value: res.data.setting_value };
+        setResearchTypes(prev => [...prev, created]);
+        setFormData(prev => ({ ...prev, type: created.setting_value }));
+        setNewTypeInput("");
+        setIsAddingType(false);
+        setIsTypeDropdownOpen(false);
+      } else {
+        alert(res.data.message);
+      }
+    } catch (err: any) {
+      console.error("Full error details:", err.response || err);
+      alert("Error adding research type: " + (err.response?.data?.message || err.message));
+    }
+  };
+
+  const handleDeleteResearchType = async (e: React.MouseEvent, id: number, value: string) => {
+    e.stopPropagation(); // Prevent selecting the item when clicking delete
+    if (!confirm(`Delete "${value}" from research types?`)) return;
+
+    try {
+      const res = await axios.post(
+        `${API_BASE_URL}/admin/manage_research_types.php`,
+        { action: "delete", id },
+        { withCredentials: true }
+      );
+      if (res.data.success) {
+        const updated = researchTypes.filter(item => item.id !== id);
+        setResearchTypes(updated);
+        // Reset to empty string so "Select research type" placeholder shows again
+        if (formData.type === value) {
+          setFormData(prev => ({ ...prev, type: "" }));
+        }
+      } else {
+        alert(res.data.message);
+      }
+    } catch (err: any) {
+      console.error("Delete error:", err.response || err);
+      alert("Error deleting research type: " + (err.response?.data?.message || err.message));
+    }
+  };
+
+
+
 
   // Intermediate state parameters handling text input buffers before chip processing
   const [authorInput, setAuthorInput] = useState("");
@@ -67,6 +149,10 @@ const UploadLegacyResearch = ({ isOpen, onClose, onSuccess, currentAdminId }: Up
 
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [researchTypes, setResearchTypes] = useState<ResearchTypeOption[]>([]);
+  const [isTypeDropdownOpen, setIsTypeDropdownOpen] = useState(false);
+  const [isAddingType, setIsAddingType] = useState(false);
+  const [newTypeInput, setNewTypeInput] = useState("");
 
   if (!isOpen) return null;
 
@@ -131,6 +217,7 @@ const UploadLegacyResearch = ({ isOpen, onClose, onSuccess, currentAdminId }: Up
     e.preventDefault();
     if (!formData.title.trim()) return alert("Project Title is required.");
     if (formData.authors.length === 0) return alert("Please specify at least one author.");
+    if (!formData.type) return alert("Please select a Project Classification Type.");
 
     try {
       setSubmitting(true);
@@ -164,7 +251,7 @@ const UploadLegacyResearch = ({ isOpen, onClose, onSuccess, currentAdminId }: Up
         setFormData({
           code: "",
           title: "",
-          type: "Thesis",
+          type: "",
           program: "",
           year: "",
           authors: [],
@@ -238,14 +325,107 @@ const UploadLegacyResearch = ({ isOpen, onClose, onSuccess, currentAdminId }: Up
                   </span>
                 )}
             </div>
-            <div>
+
+            <div className="relative">
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1">
+                Project Classification Type *
+              </label>
+
+              {/* Dropdown Trigger Button */}
+              <button
+                type="button"
+                onClick={() => setIsTypeDropdownOpen(prev => !prev)}
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-cvsu-green-base bg-white flex items-center justify-between text-left"
+              >
+                <span className={formData.type ? "text-gray-800" : "text-gray-400"}>
+                  {formData.type || "Select research type"}
+                </span>
+                <ChevronDownIcon size={16} className="text-gray-400" />
+              </button>
+
+              {/* Custom Dropdown Menu */}
+              {isTypeDropdownOpen && (
+                <div className="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
+                  <div className="max-h-48 overflow-y-auto divide-y divide-gray-100">
+                    {researchTypes.map((item) => (
+                      <div
+                        key={item.id}
+                        onClick={() => {
+                          setFormData(prev => ({ ...prev, type: item.setting_value }));
+                          setIsTypeDropdownOpen(false);
+                        }}
+                        className={`px-4 py-2.5 text-sm flex items-center justify-between cursor-pointer hover:bg-gray-50 ${
+                          formData.type === item.setting_value ? "bg-cvsu-green-50 font-bold text-cvsu-green-dark" : "text-gray-700"
+                        }`}
+                      >
+                        <span>{item.setting_value}</span>
+                        <button
+                          type="button"
+                          onClick={(e) => handleDeleteResearchType(e, item.id, item.setting_value)}
+                          className="text-gray-400 hover:text-red-500 p-1 rounded transition-colors"
+                          title="Delete research type"
+                        >
+                          <Trash2Icon size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {/* Inline Add New Research Type Section */}
+                  <div className="border-t border-gray-200 bg-gray-50 p-2">
+                    {!isAddingType ? (
+                      <button
+                        type="button"
+                        onClick={() => setIsAddingType(true)}
+                        className="w-full py-1.5 px-2 text-xs font-bold text-cvsu-green-base hover:bg-cvsu-green-50 rounded-lg flex items-center gap-1.5 transition-colors"
+                      >
+                        <PlusCircleIcon size={15} />
+                        Add research type
+                      </button>
+                    ) : (
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="text"
+                          autoFocus
+                          value={newTypeInput}
+                          onChange={(e) => setNewTypeInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault(); // Prevents submitting the main form
+                              handleAddResearchType();
+                            } else if (e.key === "Escape") {
+                              setIsAddingType(false);
+                              setNewTypeInput("");
+                            }
+                          }}
+                          placeholder="Type & press Enter..."
+                          className="flex-1 px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-cvsu-green-base bg-white"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsAddingType(false);
+                            setNewTypeInput("");
+                          }}
+                          className="p-1.5 text-gray-400 hover:text-gray-600"
+                        >
+                          <XIcon size={14} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* <div>
               <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1">Project Classification Type *</label>
               <select name="type" value={formData.type} onChange={handleInputChange} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-cvsu-green-base bg-white">
                 <option value="Thesis">Thesis</option>
                 <option value="Capstone">Capstone</option>
                 <option value="Design Project">Design Project</option>
               </select>
-            </div>
+            </div> */}
           </div>
 
           <div>
